@@ -1,0 +1,59 @@
+# ============================================================
+# Traffic Law Assistant — Web Production requirements.txt
+# Optimized for Streamlit Cloud deployment (Linux CPU environments)
+# ============================================================
+
+# ---------- Core Web UI ----------
+streamlit==1.38.0
+streamlit-chat==0.1.1
+
+# ---------- Core Orchestration ----------
+langchain==0.2.16
+langchain-community==0.2.16
+langchain-core==0.2.40
+langchain-huggingface==0.0.3
+langchain-chroma==0.1.4
+pydantic==2.8.2
+python-dotenv==1.0.1
+PyYAML==6.0.2
+
+# ---------- Document & Table Parsing ----------
+PyMuPDF
+pdfplumber==0.11.4
+pypdf==4.3.1
+
+# ---------- Vietnamese NLP & Slang ----------
+underthesea==6.8.4
+pyvi==0.1.1
+
+# ---------- Sentence Transformers & Embeddings (Lightweight CPU) ----------
+torch==2.4.1 --index-url https://download.pytorch.org/whl/cpu
+sentence-transformers==3.0.1
+transformers==4.44.2
+accelerate==0.33.0
+safetensors==0.4.5
+huggingface-hub==0.24.6
+
+# ---------- Database & Vector Store ----------
+chromadb==0.5.3
+faiss-cpu==1.8.0.post1
+
+# ---------- Sparse Retrieval ----------
+rank_bm25==0.2.2
+
+# ---------- LLM APIs & Serving ----------
+ollama==0.3.3
+openai==1.43.0
+
+# ---------- Numerics & Data ----------
+numpy==1.26.4
+pandas==2.2.2
+scipy==1.13.1
+
+# ---------- Utilities ----------
+tqdm==4.66.5
+rich==13.8.0
+loguru==0.7.2
+tiktoken==0.7.0
+regex==2024.7.24
+pytest==8.3.2

@@ -1,0 +1,144 @@
+# ============================================================
+# Retrieval configuration — Phase 2 (Hybrid Search)
+# ============================================================
+
+# What text we embed / index for each chunk. We prepend a short prefix
+# (Điều title + citation) so that BM25 lexical matches and dense semantic
+# matches both benefit from the legal hierarchy context.
+embedding_text_template:
+  include_dieu_title: true
+  include_citation_prefix: false      # set true if your queries quote citations
+  join_separator: ". "
+
+# ----------------------- Sparse (BM25) -----------------------
+bm25:
+  variant: "okapi"                    # okapi | plus | l
+  k1: 1.5                             # term saturation
+  b:  0.75                            # length normalisation
+  epsilon: 0.25                       # IDF floor (only used by BM25L / BM25Plus)
+  # Tokenisation done by src.utils.vn_tokenizer.VnTokenizer (pyvi backend).
+  tokenizer_backend: "pyvi"
+  lowercase: true
+  remove_punctuation: true
+
+# ----------------------- Dense ------------------------------
+dense:
+  model_name: "keepitreal/vietnamese-sbert"
+  # NOTE: vietnamese-sbert is PhoBERT-based and expects WORD-SEGMENTED input
+  # (multi-syllable words joined by '_'). We apply pyvi.ViTokenizer before encoding.
+  segment_input: true
+  device: "auto"                      # auto | cpu | cuda
+  batch_size: 32
+  normalize_embeddings: true          # required when using cosine distance below
+  max_seq_length: 256
+
+vector_store:
+  type: "chroma"                      # chroma | faiss
+  persist_dir: "vector_store/chroma"
+  collection_name: "traffic_law_chunks"
+  distance: "cosine"                  # cosine | l2 | ip
+  hnsw_construction_ef: 200
+  hnsw_M: 32
+
+# ----------------------- Top-K --------------------------------
+top_k:
+  bm25_candidates: 50                 # over-retrieve, then RRF
+  dense_candidates: 50
+  fused_top_k: 10                     # final Phase 2 output (feeds the re-ranker in Phase 3)
+
+# ----------------------- RRF --------------------------------
+rrf:
+  k: 60                               # Cormack et al. (2009) default
+  # Optional per-retriever weights; defaults to 1.0 each.
+  weights:
+    bm25: 1.0
+    dense: 1.0
+
+# ----------------------- Filterable metadata ------------------
+# Multi-valued list-typed fields are flattened to boolean flags
+# (e.g. vehicle_type=['o_to','xe_may'] -> vt_o_to=True, vt_xe_may=True),
+# because ChromaDB only supports scalar metadata values.
+# Listed here so build_indexes.py and dense_retriever.py stay in sync.
+flatten_list_fields:
+  vehicle_type:   "vt_"
+  violation_type: "vio_"
+  sanctions:      "san_"
+
+# ============================================================
+# Phase 3 — Cross-Encoder Re-ranking
+# ============================================================
+cross_encoder:
+  # Primary: PhoBERT-based reranker fine-tuned for Vietnamese retrieval.
+  model_name: "itdainb/PhoRanker"
+  # Alternative (uncomment to try):
+  # model_name: "bkai-foundation-models/vietnamese-bi-encoder"
+  # model_name: "cross-encoder/ms-marco-MiniLM-L-12-v2"   # multilingual fallback
+
+  max_length: 256
+  device: "auto"                # auto | cpu | cuda
+  batch_size: 16
+  # PhoRanker is PhoBERT-based -> expects word-segmented input (pyvi).
+  segment_input: true
+  # The doc text passed to the cross-encoder. Same template as Phase 2.
+  include_dieu_title: true
+  include_citation_prefix: false
+
+  # How many candidates to keep AFTER re-ranking. Phase 2 produces Top-10;
+  # we filter down to Top-3 for the LLM in Phase 4.
+  final_top_k: 3
+
+# ============================================================
+# Phase 3 — Fine-tuning the Cross-Encoder (MNR + Hard Negatives)
+# ============================================================
+cross_encoder_training:
+  # Where to start from. Can be any HF encoder; we recommend continuing from
+  # the same Vietnamese-tuned model used at inference for warm-started gradients.
+  base_model: "itdainb/PhoRanker"
+  output_dir: "models/cross_encoder_finetuned"
+
+  # Training data (see data/evaluation/training_data_schema.md)
+  train_file: "data/evaluation/cross_encoder_train.jsonl"
+  dev_file:   "data/evaluation/cross_encoder_dev.jsonl"   # optional; skipped if missing
+
+  # ---- Hard-negative mining (the academically interesting bit) ----
+  hard_negatives:
+    # How many BM25-mined hard negatives accompany each positive in training.
+    num_per_positive: 5
+    # Mine from BM25's top-N (N >> num_per_positive so we have room to skip the gold positive).
+    bm25_pool_size: 50
+    # Skip the very top BM25 hit if its rank-1 position is the gold positive — that's
+    # not a hard negative, it's the answer. (Implementation always excludes the gold id.)
+    # Set to e.g. 0.05 to additionally skip candidates whose text overlap with the
+    # positive is > 5% by token-Jaccard (avoids near-duplicates that confuse training).
+    dedup_jaccard_threshold: 0.85
+    # If BM25 returns < num_per_positive hard negatives (rare on small corpora),
+    # top up with random negatives from the corpus.
+    fill_with_random: true
+    random_seed: 42
+
+  # ---- MultipleNegativesRankingLoss ----
+  loss:
+    # Temperature / scaling factor on logits before softmax. Larger = sharper.
+    scale: 20.0
+    # Whether to include in-batch positives from OTHER queries as additional negatives.
+    # Disabled by default — for cross-encoders this would N×(N+K) forward passes per batch.
+    # Hard negatives alone are sufficient for academic demonstration.
+    include_in_batch_negatives: false
+
+  # ---- Optimisation ----
+  num_epochs: 3
+  per_device_batch_size: 16            # number of (q, p, neg_1, ..., neg_K) examples per step
+  gradient_accumulation_steps: 1
+  learning_rate: 2.0e-5
+  warmup_ratio: 0.1
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  bf16: false                          # set true on Ampere+ GPU
+  fp16: false                          # set true on older GPUs without bf16
+  max_length: 256
+
+  # ---- Logging / checkpointing ----
+  logging_steps: 25
+  save_steps: 200
+  eval_steps: 200
+  seed: 42

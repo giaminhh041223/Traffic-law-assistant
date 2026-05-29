@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import sys; print\\(sys.executable\\)\")",
+      "Bash(python -c \"import pytest\")",
+      "Bash(python -m pytest tests/test_chunker.py -v)",
+      "Bash(python -m pip install pytest pyyaml loguru --quiet)",
+      "Bash(python -m pytest tests/test_rrf.py -v)",
+      "Bash(python -m pip install rank_bm25 pyvi --quiet)",
+      "Bash(python -m pytest tests/test_bm25_smoke.py -v)",
+      "Bash(python -c ' *)",
+      "Bash(PYTHONIOENCODING=utf-8 python -c ' *)",
+      "Bash(python -m pytest tests/test_retrieval_metrics.py -v)",
+      "Bash(python -m pytest tests/test_retrieval_metrics.py tests/test_citation_validator.py tests/test_prompt_and_rag.py tests/test_reranker.py -v)",
+      "Bash(ls \"C:/Users/ADMIN/Downloads/files.zip\" && ls \"D:/NLP_Law _chatbot/src/phase1_data_engineering/\" && ls \"D:/NLP_Law _chatbot/data/raw/\" 2>&1)",
+      "Bash(python -c \"import zipfile; z = zipfile.ZipFile\\(r'C:/Users/ADMIN/Downloads/files.zip'\\); print\\('\\\\n'.join\\(z.namelist\\(\\)\\)\\)\")",
+      "Bash(mkdir -p data/raw)",
+      "Bash(pip install *)",
+      "Bash(python -c \"import pandas, pyvi, rank_bm25, loguru, yaml; print\\('all ok'\\)\")",
+      "Bash(python -c \"import pandas as pd; df = pd.read_csv\\('data/raw/metadata_luat.csv'\\); print\\(df.head\\(3\\).to_string\\(\\)\\); print\\('---'\\); print\\('Chapter values:', df['chapter_number'].unique\\(\\)\\); print\\('Article range:', df['article_number'].min\\(\\), '-', df['article_number'].max\\(\\)\\)\")",
+      "Bash(set PYTHONIOENCODING=utf-8)",
+      "Bash(python -c \"import sys; sys.stdout.reconfigure\\(encoding='utf-8'\\); import pandas as pd; df = pd.read_csv\\('data/raw/metadata_luat.csv'\\); print\\('Shape:', df.shape\\); print\\('Chapters:', list\\(df['chapter_number'].unique\\(\\)\\)\\); print\\('Articles:', df['article_number'].min\\(\\), '-', df['article_number'].max\\(\\)\\); print\\('---first row content \\(first 600 chars\\)---'\\); print\\(df.iloc[0]['content'][:600]\\)\")",
+      "Bash(python -c \"import sys; sys.stdout.reconfigure\\(encoding='utf-8'\\); import pandas as pd; df = pd.read_csv\\('data/raw/metadata_luat.csv'\\); r = df.iloc[4]; print\\('Row 5:'\\); print\\(' chapter:', r['chapter_number'], '|', r['chapter_title']\\); print\\(' article:', r['article_number'], '|', r['article_title']\\); print\\(' content \\(first 1200\\):'\\); print\\(r['content'][:1200]\\)\")",
+      "Bash(python -c 'import sys; sys.stdout.reconfigure\\(encoding='\\\\''utf-8'\\\\''\\); import pandas as pd; import re; df = pd.read_csv\\('\\\\''data/raw/metadata_luat.csv'\\\\''\\); n_with_diem=0; samples=[]; pattern=re.compile\\(r'\\\\''\\\\s[abcdđeghiklmnopqrstuv]\\\\\\)\\\\s'\\\\''\\); *)",
+      "Bash(dir /B data\\\\raw)",
+      "Bash(python -m src.phase1_data_engineering.run_ingest)",
+      "Bash(python -m src.phase2_hybrid_search.build_indexes --rebuild)",
+      "Bash(pip uninstall *)",
+      "Bash(python scripts/convert_doc_to_pdf.py \"data/raw/Quy chuan.doc\" \"data/raw/QCVN_41_2024_attachment.pdf\")",
+      "Bash(python -c \"import sys; print\\('Python exec:', sys.executable\\)\")",
+      "Bash(venv/Scripts/python.exe --version)",
+      "Bash(venv/Scripts/python.exe -c \"import sys; print\\(sys.executable\\); import pkg_resources; pkgs = sorted\\([str\\(p\\) for p in pkg_resources.working_set]\\); print\\(f'{len\\(pkgs\\)} packages installed'\\)\")"
+    ]
+  }
+}

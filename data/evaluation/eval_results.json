@@ -1,0 +1,384 @@
+{
+  "timestamp": "2026-05-29 15:45:47",
+  "total_test_cases": 15,
+  "average_retrieval_precision": 0.6696296296296297,
+  "average_calculation_accuracy": 0.4,
+  "average_hallucination_rate": 0.17777777777777776,
+  "validation_pass_rate": 0.7333333333333333,
+  "results": [
+    {
+      "id": "TC01",
+      "category": "Tiếng lóng/Từ địa phương",
+      "query": "Em chạy con Wave tàu nẹt pô ầm ĩ ngoài phố thì bị bồ câu tuýt lại phạt bao nhiêu tiền hả anh?",
+      "duration_seconds": 70.57610269999714,
+      "actual_answer": "Người điều khiển xe mô tô, xe gắn máy (kể cả xe máy điện) thực hiện hành vi rú ga liên tục trong đô thị, sử dụng đèn chiếu xa trong đô thị, điều khiển phương tiện tham gia giao thông đường bộ lạng lách, đánh võng, rú ga liên tục bị phạt tiền từ 100.000 đồng đến 200.000 đồng (Điểm n, Khoản 1, Điều 6, Nghị định 100/2019/NĐ-CP).",
+      "thought": "- Đối tượng: xe mô tô, xe gắn máy (kể cả xe máy điện)\n- Hành vi: rú ga liên tục trong đô thị, sử dụng đèn chiếu xa trong đô thị, điều khiển phương tiện tham gia giao thông đường bộ lạng lách, đánh võng, rú ga liên tục\n- Mức phạt: 100.000 đồng đến 200.000 đồng\n- Tài liệu: Điểm n Khoản 1 Điều 6 -> Nghị định 100/2019/NĐ-CP",
+      "retrieved_chunk_ids": [
+        "ND100_123__Dieu_6__Khoan_3__Diem_c",
+        "LUAT_TTATGT_2024__Dieu_9__Khoan_5",
+        "ND100_123__Dieu_6__Khoan_1__Diem_n"
+      ],
+      "citations_found": [
+        "ExtractedCitation(dieu='6', khoan='1', diem='n', nghi_dinh=('100', '2019'), qcvn=None)"
+      ],
+      "hallucinated_citations": [],
+      "is_valid_citation": true,
+      "metrics": {
+        "retrieval_precision": 1.0,
+        "calculation_accuracy": 0.0,
+        "hallucination_rate": 0.0
+      }
+    },
+    {
+      "id": "TC02",
+      "category": "Tiếng lóng/Từ địa phương",
+      "query": "Em lái con xe cọp làm vài chén rượu say bí tỉ nồng độ cồn kịch khung bị giam xe bao nhiêu ngày?",
+      "duration_seconds": 68.83909880000283,
+      "actual_answer": "Thought:\n- Đối tượng: xe mô tô, xe gắn máy (kể cả xe máy điện)\n- Hành vi: không chấp hành yêu cầu kiểm tra về nồng độ cồn của người thi hành công vụ\n- Mức phạt: 800.000 đồng đến 1.000.000 đồng\n\nTrả lời:\nBạn điều khiển xe mô tô, xe gắn máy (kể cả xe máy điện) không chấp hành yêu cầu kiểm tra về nồng độ cồn của người thi hành công vụ bị phạt tiền từ 800.000 đồng đến 1.000.000 đồng (Điểm e, Khoản 4, Điều 6, Nghị định 100/2019/NĐ-CP).",
+      "thought": "",
+      "retrieved_chunk_ids": [
+        "ND100_123__Dieu_6__Khoan_4__Diem_c__occ3",
+        "ND100_123__Dieu_8__Khoan_4",
+        "ND100_123__Dieu_7__Khoan_9",
+        "ND100_123__Dieu_6__Khoan_4__Diem_e__occ2",
+        "ND100_123__Dieu_17__Khoan_3"
+      ],
+      "citations_found": [
+        "ExtractedCitation(dieu='6', khoan='4', diem='e', nghi_dinh=('100', '2019'), qcvn=None)"
+      ],
+      "hallucinated_citations": [],
+      "is_valid_citation": true,
+      "metrics": {
+        "retrieval_precision": 0.3333333333333333,
+        "calculation_accuracy": 0.0,
+        "hallucination_rate": 0.0
+      }
+    },
+    {
+      "id": "TC03",
+      "category": "Câu hỏi phức hợp đa hành vi",
+      "query": "Tôi lái xe hơi vượt đèn đỏ, không thắt dây an toàn khi lái xe chạy trên đường, sử dụng điện thoại bằng tay, và không có bảo hiểm bắt buộc. Hãy tính tổng mức phạt lớn nhất.",
+      "duration_seconds": 76.40777259999595,
+      "actual_answer": "Bạn điều khiển xe hơi không chấp hành hiệu lệnh của đèn tín hiệu giao thông (vi phạm lỗi Điểm p, Khoản 3, Điều 5, Nghị định 100/2019/NĐ-CP), không thắt dây an toàn khi lái xe chạy trên đường (vi phạm lỗi Điểm a, Khoản 5, Điều 5, Nghị định 100/2019/NĐ-CP) và sử dụng điện thoại di động khi đang điều khiển xe bằng tay (vi phạm lỗi Điểm p, Khoản 3, Điều 5, Nghị định 100/2019/NĐ-CP). Do đó, mức phạt lớn nhất bạn phải chịu là tổng cộng từ 800.000 đồng đến 6.000.000 đồng (điểm p, kia khoản 3, điều 5, nghị định 100/2019/nđ-cp) + 4.000.000 đồng đến 6.000.000 đồng (điểm a, kia khoản 5, điều 5, nghị định 100/2019/nđ-cp). Đây là mức phạt theo quy định của Nghị định 100/2019/NĐ-CP.\nTôi không tìm thấy quy định phù hợp trong văn bản pháp luật được cung cấp để trả lời câu hỏi này.",
+      "thought": "- Đối tượng: Xe hơi (đối với xe ô tô)\n- Hành vi: Không chấp hành hiệu lệnh của đèn tín hiệu giao thông, không thắt dây an toàn khi lái xe chạy trên đường, sử dụng điện thoại di động khi đang điều khiển xe bằng tay, và không có bảo hiểm bắt buộc\n- Mức phạt: 800.000 đồng (Điểm p, Khoản 3, Điều 5, Nghị định 100/2019/NĐ-CP) + 4.000.000 đồng đến 6.000.000 đồng (Điểm a, Khoản 5, Điều 5, Nghị định 100/2019/NĐ-CP)\n- Tài liệu: Điểm p, Khoản 3, Điều 5, Nghị định 100/2019/NĐ-CP + Điểm a, Khoản 5, Điều 5, Nghị định 100/2019/NĐ-CP",
+      "retrieved_chunk_ids": [
+        "LUAT_TTATGT_2024__Dieu_9__Khoan_6",
+        "QCVN41_2024__Dieu_8",
+        "ND100_123__Dieu_5__Khoan_5__Diem_a",
+        "LUAT_TTATGT_2024__Dieu_10__Khoan_2",
+        "ND100_123__Dieu_5__Khoan_3__Diem_p"
+      ],
+      "citations_found": [],
+      "hallucinated_citations": [],
+      "is_valid_citation": true,
+      "metrics": {
+        "retrieval_precision": 0.4444444444444444,
+        "calculation_accuracy": 0.0,
+        "hallucination_rate": 0.0
+      }
+    },
+    {
+      "id": "TC04",
+      "category": "Tranh chấp/Biện hộ pháp lý",
+      "query": "Tôi bị CSGT lập biên bản lỗi đè vạch nhưng thực tế vạch kẻ đường ở đó đã bị mờ hoàn toàn và không có biển báo đi kèm. Tôi có quyền khiếu nại không và căn cứ vào quy định nào trong QCVN 41?",
+      "duration_seconds": 129.3194979999971,
+      "actual_answer": "Tôi không tìm thấy quy định phù hợp trong văn bản pháp luật được cung cấp để trả lời câu hỏi này.",
+      "thought": "",
+      "retrieved_chunk_ids": [
+        "QCVN41_TT__Dieu_1",
+        "QCVN41_TT__Dieu_2__Khoan_2",
+        "ND100_123__Dieu_47__Khoan_8",
+        "ND100_123__Dieu_47__Khoan_6",
+        "QCVN41_2024__Dieu_84__Diem_d__occ14"
+      ],
+      "citations_found": [
+        "ExtractedCitation(dieu='47', khoan='6', diem=None, nghi_dinh=('100', '2019'), qcvn=None)",
+        "ExtractedCitation(dieu=None, khoan=None, diem=None, nghi_dinh=None, qcvn='41')",
+        "ExtractedCitation(dieu=None, khoan=None, diem=None, nghi_dinh=None, qcvn='41')"
+      ],
+      "hallucinated_citations": [
+        "ExtractedCitation(dieu=None, khoan=None, diem=None, nghi_dinh=None, qcvn='41')",
+        "ExtractedCitation(dieu=None, khoan=None, diem=None, nghi_dinh=None, qcvn='41')"
+      ],
+      "is_valid_citation": false,
+      "metrics": {
+        "retrieval_precision": 0.3333333333333333,
+        "calculation_accuracy": 1.0,
+        "hallucination_rate": 0.6666666666666666
+      }
+    },
+    {
+      "id": "TC05",
+      "category": "Tranh chấp/Biện hộ pháp lý",
+      "query": "Tôi chở người đi bệnh viện cấp cứu gấp bằng xe máy nên đã vượt đèn đỏ và chở ba. Tôi có bị phạt tiền không?",
+      "duration_seconds": 97.00143249999383,
+      "actual_answer": "Bạn đã chở người bệnh đi cấp cứu bằng xe mô tô và không chấp hành hiệu lệnh của đèn tín hiệu giao thông (vượt đèn đỏ), do đó bạn đã vi phạm lỗi \"không chấp hành hiệu lệnh của đèn tín hiệu\". Theo Nghị định 100/2019/NĐ-CP, mức phạt cho hành vi này là từ 800.000 đồng đến 1.000.000 đồng (Điểm e Khoản 4 Điều 6, Nghị định 100/2019/NĐ-CP). Hãy tiếp tục duy trì tinh thần tự giác chấp hành luật giao thông để đảm bảo an toàn cho mọi người trên đường.",
+      "thought": "- Đối tượng: xe mô tô, xe gắn máy (kể cả xe máy điện)\n- Hành vi: vượt đèn đỏ, chở quá số người\n- Mức phạt: 800.000 đồng đến 1.000.000 đồng\n- Tài liệu: Điểm e Khoản 4 Điều 6, Nghị định 100/2019/NĐ-CP",
+      "retrieved_chunk_ids": [
+        "ND100_123__Dieu_17__Khoan_4",
+        "ND100_123__Dieu_6__Khoan_4__Diem_đ",
+        "LUAT_TTATGT_2024__Dieu_33__Khoan_1",
+        "ND100_123__Dieu_6__Khoan_4__Diem_e",
+        "LUAT_TTATGT_2024__Dieu_33__Khoan_4"
+      ],
+      "citations_found": [
+        "ExtractedCitation(dieu='6', khoan='4', diem='e', nghi_dinh=('100', '2019'), qcvn=None)"
+      ],
+      "hallucinated_citations": [],
+      "is_valid_citation": true,
+      "metrics": {
+        "retrieval_precision": 1.0,
+        "calculation_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      }
+    },
+    {
+      "id": "TC06",
+      "category": "Thông tin sai lệch/Bẫy ảo giác",
+      "query": "Nghe nói bây giờ đi xe máy không đội mũ bảo hiểm bị phạt 5 triệu đồng và giam xe đúng không?",
+      "duration_seconds": 104.45154199999524,
+      "actual_answer": "<context>\n[Đoạn 1] [Khoản 2, Điều 33, LUAT_TTATGT_2024]\nNgười lái xe, người được chở, hàng hóa xếp trên xe mô tô, xe gắn máy\nĐối tượng áp dụng: Xe mô tô, xe gắn máy | Hành vi vi phạm: Mũ bảo hiểm\nNgười lái xe, người được chở trên xe mô tô hai bánh, xe mô tô ba bánh, xe gắn máy phải đội mũ bảo hiểm theo đúng quy chuẩn kỹ thuật quốc gia và cài quai đúng quy cách.\n\n[Đoạn 2] [Điểm b, Khoản 2, Điều 11, Nghị định 100/2019/NĐ-CP]\nXử phạt các hành vi vi phạm khác về quy tắc giao thông đường bộ\nĐối tượng áp dụng: Xe mô tô, xe gắn máy | Hành vi vi phạm: Mũ bảo hiểm\nPhạt tiền từ 100.000 đồng đến 200.000 đồng đối với cá nhân thực hiện một trong các hành vi\nvi phạm sau đây:\nb) Không đội “mũ bảo hiểm cho người đi mô tô, xe máy” hoặc đội “mũ bảo hiểm cho người đi\nmô tô, xe máy” không cài quai đúng quy cách khi tham gia giao thông trên đường bộ.\n\n7. Phạt tiền từ 500.000 đồng đến 1.000.000 đồng đối với cá nhân, từ 1.000.000 đồng đến\n2.000.000 đồng đối với tổ chức thực hiện một trong các hành vi vi phạm sau đây:\n\n[Đoạn 3] [Khoản 4, Điều 17, Nghị định 100/2019/NĐ-CP]\nXử phạt người điều khiển xe mô tô, xe gắn máy (kể cả xe máy điện), các loại xe\nĐối tượng áp dụng: Xe mô tô, xe gắn máy | Hành vi vi phạm: Giấy phép lái xe (bằng lái), Biển số xe\nNgoài việc bị phạt tiền, người điều khiển xe thực hiện hành vi vi phạm còn bị áp dụng các\nhình thức xử phạt bổ sung sau đây:\n\na) Thực hiện hành vi quy định tại điểm d khoản 1 Điều này bị tịch thu còi;\n\nb) Thực hiện hành vi quy định tại điểm b, điểm c khoản 2 Điều này bị tịch thu Giấy đăng ký xe,\nbiển số không đúng quy định hoặc bị tẩy xóa;\n\nc) Thực hiện hành vi quy định tại điểm a khoản 3 Điều này bị tước quyền sử dụng Giấy phép lái\nxe từ 01 tháng đến 03 tháng;\n\nd) Thực hiện hành vi quy định tại điểm b khoản 3 Điều này bị tịch thu phương tiện và tước\nquyền sử dụng Giấy phép lái xe từ 01 tháng đến 03 tháng;\n\nđ) Thực hiện hành vi quy định tại điểm a, điểm b khoản 2 Điều này trong trường hợp không có\nGiấy đăng ký xe hoặc sử dụng Giấy đăng ký xe không do cơ quan có thẩm quyền cấp, không\nđúng số khung, số máy của xe hoặc bị tẩy xóa mà không chứng minh được nguồn gốc xuất xứ\ncủa phương tiện (không có giấy tờ, chứng từ chuyển quyền sở hữu xe hoặc giấy tờ, chứng từ\nnguồn gốc xe hợp pháp) thì bị tịch thu phương tiện.\n\n[Đoạn 4] [Điểm a, Khoản 4, Điều 6, Nghị định 100/2019/NĐ-CP]\nXử phạt người điều khiển xe mô tô, xe gắn máy (kể cả xe máy điện), các loại xe\nĐối tượng áp dụng: Xe mô tô, xe gắn máy | Hành vi vi phạm: Chạy quá tốc độ\nPhạt tiền từ 800.000 đồng đến 1.000.000 đồng[32] đối với người điều khiển xe thực hiện một\ntrong các hànhvi vi phạm sau đây:\na) Điều khiển xe chạy quá tốc độ quy định trên 20 km/h;\n\n[Đoạn 5] [Điểm d, Khoản 4, Điều 6, Nghị định 100/2019/NĐ-CP]\nXử phạt người điều khiển xe mô tô, xe gắn máy (kể cả xe máy điện), các loại xe\nĐối tượng áp dụng: Xe mô tô, xe gắn máy | Hành vi vi phạm: Giấy",
+      "thought": "",
+      "retrieved_chunk_ids": [
+        "LUAT_TTATGT_2024__Dieu_33__Khoan_2",
+        "ND100_123__Dieu_11__Khoan_2__Diem_b__occ2",
+        "ND100_123__Dieu_17__Khoan_4",
+        "ND100_123__Dieu_6__Khoan_4__Diem_a__occ4",
+        "ND100_123__Dieu_6__Khoan_4__Diem_d__occ3"
+      ],
+      "citations_found": [
+        "ExtractedCitation(dieu='33', khoan='2', diem=None, nghi_dinh=None, qcvn=None)",
+        "ExtractedCitation(dieu='11', khoan='2', diem='b', nghi_dinh=('100', '2019'), qcvn=None)",
+        "ExtractedCitation(dieu='17', khoan='4', diem=None, nghi_dinh=('100', '2019'), qcvn=None)",
+        "ExtractedCitation(dieu='6', khoan='4', diem='a', nghi_dinh=('100', '2019'), qcvn=None)",
+        "ExtractedCitation(dieu='6', khoan='4', diem='d', nghi_dinh=('100', '2019'), qcvn=None)"
+      ],
+      "hallucinated_citations": [],
+      "is_valid_citation": true,
+      "metrics": {
+        "retrieval_precision": 0.6666666666666666,
+        "calculation_accuracy": 0.0,
+        "hallucination_rate": 0.0
+      }
+    },
+    {
+      "id": "TC07",
+      "category": "Tranh chấp/Biện hộ pháp lý",
+      "query": "Đang đi xe máy gặp ngã tư có đèn xanh nhưng lại có biển báo cấm đi thẳng. Tôi phải tuân theo đèn hay biển báo?",
+      "duration_seconds": 60.943390199987334,
+      "actual_answer": "Tôi không tìm thấy quy định phù hợp trong văn bản pháp luật được cung cấp để trả lời câu hỏi này.",
+      "thought": "- Đối tượng: xe mô tô, xe gắn máy\n- Hành vi: gặp ngã tư có đèn xanh nhưng biển báo cấm đi thẳng (vi phạm lỗi Điểm a Khoản 2 Điều 84)\n- Mức phạt: 0 đồng (không vi phạm lỗi Điểm a Khoản 2 Điều 84, vì biển báo cấm đi thẳng).\n- Tài liệu: Điểm a Khoản 2 Điều 84 -> Quy chuẩn kỹ thuật quốc gia về đường bộ số 41/2024.",
+      "retrieved_chunk_ids": [
+        "QCVN41_2024__Dieu_84__Diem_b__occ16",
+        "QCVN41_2024__Dieu_84__Diem_e__occ6",
+        "QCVN41_2024__Dieu_84__Diem_g",
+        "QCVN41_2024__Dieu_84__Diem_a__occ9",
+        "LUAT_TTATGT_2024__Dieu_20__Khoan_2"
+      ],
+      "citations_found": [
+        "ExtractedCitation(dieu='84', khoan='2', diem='a', nghi_dinh=None, qcvn=None)"
+      ],
+      "hallucinated_citations": [
+        "ExtractedCitation(dieu='84', khoan='2', diem='a', nghi_dinh=None, qcvn=None)"
+      ],
+      "is_valid_citation": false,
+      "metrics": {
+        "retrieval_precision": 0.5,
+        "calculation_accuracy": 1.0,
+        "hallucination_rate": 1.0
+      }
+    },
+    {
+      "id": "TC08",
+      "category": "Tiếng lóng/Từ địa phương",
+      "query": "Hôm qua em lái chiếc xe máy thông chốt rồi bị cớm giữ lại đòi xem tờ sớ mà em không mang theo thì ăn phạt bao nhiêu?",
+      "duration_seconds": 50.77876180000021,
+      "actual_answer": "Bạn không chấp hành hiệu lệnh của đèn tín hiệu giao thông (vượt đèn đỏ) và không mang theo Giấy phép lái xe. Do đó, bạn bị phạt tiền từ 800.000 đồng đến 1.000.000 đồng (Điểm e, Khoản 4, Điều 6, Nghị định 100/2019/NĐ-CP). Hãy tiếp tục duy trì tinh thần tự giác chấp hành luật giao thông để đảm bảo an toàn!",
+      "thought": "- Đối tượng: xe mô tô\n- Hành vi: không chấp hành hiệu lệnh của đèn tín hiệu giao thông (vượt đèn đỏ)\n- Mức phạt: 800.000 đồng đến 1.000.000 đồng\n- Tài liệu: Điểm e, Khoản 4, Điều 6, Nghị định 100/2019/NĐ-CP",
+      "retrieved_chunk_ids": [
+        "ND100_123__Dieu_21__Khoan_2",
+        "ND100_123__Dieu_22__Khoan_1",
+        "LUAT_TTATGT_2024__Dieu_65__Khoan_8",
+        "ND100_123__Dieu_23__Diem_đ",
+        "ND100_123__Dieu_6__Khoan_4__Diem_e"
+      ],
+      "citations_found": [
+        "ExtractedCitation(dieu='6', khoan='4', diem='e', nghi_dinh=('100', '2019'), qcvn=None)"
+      ],
+      "hallucinated_citations": [],
+      "is_valid_citation": true,
+      "metrics": {
+        "retrieval_precision": 0.6666666666666666,
+        "calculation_accuracy": 0.0,
+        "hallucination_rate": 0.0
+      }
+    },
+    {
+      "id": "TC09",
+      "category": "Câu hỏi phức hợp đa hành vi",
+      "query": "Tôi đi xe đạp điện làm vài chén rượu xong chạy ngược chiều trên phố thì bị phạt thế nào?",
+      "duration_seconds": 51.04005369999504,
+      "actual_answer": "Bạn điều khiển xe đạp điện (kể cả xe đạp điện) không đội “mũ bảo hiểm cho người đi mô tô, xe máy” hoặc đội “mũ bảo hiểm cho người đi mô tô, xe máy” không cài quai đúng quy cách khi tham gia giao thông trên đường bộ. Do đó, bạn bị phạt tiền từ 80.000 đồng đến 100.000 đồng.",
+      "thought": "- Đối tượng: xe đạp điện\n- Hành vi: điều khiển xe trên đường mà trong máu hoặc hơi thở có nồng độ cồn, chạy đi ngược chiều của đường một chiều, đi ngược chiều trên đường có biển “Cấm đi ngược chiều” gây tai nạn giao thông.\n- Phán quyết: người dùng điều khiển xe đạp điện không đội “mũ bảo hiểm cho người đi mô tô, xe máy” hoặc đội “mũ bảo hiểm cho người đi mô tô, xe máy” không cài quai đúng quy cách khi tham gia giao thông trên đường bộ. Do đó, người dùng bị phạt tiền từ 80.000 đồng đến 100.000 đồng.",
+      "retrieved_chunk_ids": [
+        "ND100_123__Dieu_8__Khoan_4",
+        "ND100_123__Dieu_8__Khoan_1__Diem_q",
+        "ND100_123__Dieu_5__Khoan_5__Diem_c",
+        "ND100_123__Dieu_5__Khoan_3__Diem_o",
+        "ND100_123__Dieu_7__Khoan_7"
+      ],
+      "citations_found": [],
+      "hallucinated_citations": [],
+      "is_valid_citation": true,
+      "metrics": {
+        "retrieval_precision": 1.0,
+        "calculation_accuracy": 0.0,
+        "hallucination_rate": 0.0
+      }
+    },
+    {
+      "id": "TC10",
+      "category": "Thông tin sai lệch/Bẫy ảo giác",
+      "query": "Tôi đi xe máy lùi trên đường cao tốc bị phạt bao nhiêu tiền?",
+      "duration_seconds": 70.54049669999222,
+      "actual_answer": "Bạn điều khiển xe mô tô lùi trên đường cao tốc (vi phạm điểm e, Khoản 1, Điều 6), do đó hành vi của bạn là hoàn toàn đúng luật và KHÔNG BỊ XỬ PHẠT (mức phạt từ 100.000 đồng đến 200.000 đồng). Hãy tiếp tục duy trì tinh thần tự giác chấp hành luật giao thông để đảm bảo an toàn!",
+      "thought": "- Đối tượng: xe mô tô\n- Hành vi: lùi xe trên đường cao tốc (vi phạm điểm e, Khoản 1, Điều 6, Nghị định 100/2019/NĐ-CP)\n- Mức phạt: từ 100.000 đồng đến 200.000 đồng\n- Tài liệu: Điểm e, Khoản 1, Điều 6 -> Nghị định 100/2019/NĐ-CP",
+      "retrieved_chunk_ids": [
+        "ND100_123__Dieu_7__Khoan_8",
+        "ND100_123__Dieu_6__Khoan_4__Diem_b__occ4",
+        "ND100_123__Dieu_6__Khoan_1__Diem_e"
+      ],
+      "citations_found": [
+        "ExtractedCitation(dieu='6', khoan='1', diem='e', nghi_dinh=None, qcvn=None)"
+      ],
+      "hallucinated_citations": [],
+      "is_valid_citation": true,
+      "metrics": {
+        "retrieval_precision": 0.6666666666666666,
+        "calculation_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      }
+    },
+    {
+      "id": "TC11",
+      "category": "Thông tin sai lệch/Bẫy ảo giác",
+      "query": "Cách thức nấu một bát phở bò Hà Nội thơm ngon chuẩn vị cần những nguyên liệu gì?",
+      "duration_seconds": 41.372107400005916,
+      "actual_answer": "Tôi không tìm thấy quy định phù hợp trong văn bản pháp luật được cung cấp để trả lời câu hỏi này.",
+      "thought": "",
+      "retrieved_chunk_ids": [
+        "QCVN41_2024__page313__t2",
+        "LUAT_TTATGT_2024__Dieu_50__Khoan_2",
+        "QCVN41_2024__page314__t1"
+      ],
+      "citations_found": [],
+      "hallucinated_citations": [],
+      "is_valid_citation": false,
+      "metrics": {
+        "retrieval_precision": 1.0,
+        "calculation_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      }
+    },
+    {
+      "id": "TC12",
+      "category": "Câu hỏi phức hợp đa hành vi",
+      "query": "Con tôi mới 15 tuổi lái xe máy 110cc đi học bị bắt. Tôi là chủ xe giao xe cho cháu thì tôi bị phạt bao nhiêu và cháu bị phạt bao nhiêu?",
+      "duration_seconds": 69.07383850000042,
+      "actual_answer": "Tôi không tìm thấy quy định phù hợp trong văn bản pháp luật được cung cấp để trả lời câu hỏi này.",
+      "thought": "- Đối tượng: Chủ xe mô tô, xe gắn máy (từ 15 tuổi trở lên)\n- Hành vi: Tự ý thay đổi khung, máy, hình dáng, kích thước, đặc tính của xe (không đúng với Giấy đăng ký xe) -> thuộc Điểm c Khoản 2 Điều 23 Nghị định 100/2019/NĐ-CP\n- Mức phạt: Phạt tiền từ 400.000 đồng đến 600.000 đồng đối với cá nhân (từ 800.000 đồng đến 1.200.000 đồng đối với tổ chức là chủ xe mô tô, xe gắn máy và các loại xe tương tự xe mô tô) -> Chủ xe bị phạt tiền từ 400.000 đồng đến 600.000 đồng\n- Phán quyết: Chủ xe mô tô, xe gắn máy (từ 15 tuổi trở lên) không phải chịu trách nhiệm về hành vi của con mình khi lái xe.",
+      "retrieved_chunk_ids": [
+        "ND100_123__Dieu_6__Khoan_1__lead",
+        "ND100_123__Dieu_23__Diem_đ",
+        "ND100_123__Dieu_6__Khoan_4__lead",
+        "ND100_123__Dieu_30__Khoan_1",
+        "ND100_123__Dieu_23__Diem_c"
+      ],
+      "citations_found": [
+        "ExtractedCitation(dieu='23', khoan='2', diem='c', nghi_dinh=('100', '2019'), qcvn=None)"
+      ],
+      "hallucinated_citations": [
+        "ExtractedCitation(dieu='23', khoan='2', diem='c', nghi_dinh=('100', '2019'), qcvn=None)"
+      ],
+      "is_valid_citation": false,
+      "metrics": {
+        "retrieval_precision": 0.6,
+        "calculation_accuracy": 0.0,
+        "hallucination_rate": 1.0
+      }
+    },
+    {
+      "id": "TC13",
+      "category": "Tranh chấp/Biện hộ pháp lý",
+      "query": "Tôi dừng xe sát lề đường để nghe điện thoại rồi đi ngay thì CSGT phạt lỗi đỗ xe có đúng không? Căn cứ luật nào phân biệt?",
+      "duration_seconds": 60.2939369000087,
+      "actual_answer": "Bạn dừng xe, đỗ xe không sát theo lề đường, hè phố phía bên phải theo chiều đi hoặc bánh xe gần nhất cách lề đường, hè phố quá 0,25 mét; dừng xe trên đường xe điện, đường dành riêng cho xe buýt; dừng xe trên miệng cống thoát nước, miệng hầm của đường điện thoại, điện cao thế, chỗ dành riêng cho xe chữa cháy lấy nước; rời vị trí lái, tắt máy khi dừng xe; dừng xe, đỗ xe không đúng vị trí quy định ở những đoạn có bố trí nơi dừng xe, đỗ xe; dừng xe, đỗ xe trên phần đường dành cho người đi bộ qua đường; dừng xe nơi có biển “Cấm dừng xe và đỗ xe”, trừ hành vi vi phạm quy định tại điểm i khoản 4, điểm d khoản 7[13] Điều này.\n\nBạn đã vi phạm Điểm h Khoản 2 Điều 5 Nghị định 100/2019/NĐ-CP. Do đó, CSGT có thể phạt lỗi dừng xe không sát theo lề đường phía bên phải theo chiều đi của mình (vi phạm Điểm h Khoản 2 Điều 5 Nghị định 100/2019/NĐ-CP). Đây là căn cứ pháp lý cho việc phạt lỗi đỗ xe.",
+      "thought": "- Đối tượng: ô tô (đang điều khiển phương tiện)\n- Hành vi: dừng xe, đỗ xe không sát lề đường phía bên phải theo chiều đi của mình (vi phạm Điểm h Khoản 2 Điều 5 Nghị định 100/2019/NĐ-CP)\n- Mức phạt: từ 400.000 đồng đến 600.000 đồng\n- Tài liệu: Điểm h Khoản 2 Điều 5 Nghị định 100/2019/NĐ-CP",
+      "retrieved_chunk_ids": [
+        "LUAT_TTATGT_2024__Dieu_18__Khoan_5",
+        "LUAT_TTATGT_2024__Dieu_18__Khoan_6",
+        "ND100_123__Dieu_5__Khoan_2__Diem_h",
+        "ND100_123__Dieu_5__Khoan_4"
+      ],
+      "citations_found": [
+        "ExtractedCitation(dieu='5', khoan='2', diem='h', nghi_dinh=('100', '2019'), qcvn=None)"
+      ],
+      "hallucinated_citations": [],
+      "is_valid_citation": true,
+      "metrics": {
+        "retrieval_precision": 1.0,
+        "calculation_accuracy": 1.0,
+        "hallucination_rate": 0.0
+      }
+    },
+    {
+      "id": "TC14",
+      "category": "Tiếng lóng/Từ địa phương",
+      "query": "Lái con Wave tàu lạng lách đánh võng mà không đóng bỉm thì bị phạt bao nhiêu?",
+      "duration_seconds": 85.47745849999774,
+      "actual_answer": "Tôi không tìm thấy quy định phù hợp.",
+      "thought": "- Đối tượng: mô tô, xe gắn máy (kể cả xe máy điện)\n- Hành vi: lạng lách hoặc đánh võng trên đường bộ trong, ngoài đô thị -> thuộc Điểm b Khoản 4 Điều 6\n- Mức phạt: 800.000 đồng đến 1.000.000 đồng[32] đối với người điều khiển xe thực hiện một trong các hành vi vi phạm sau đây:\nb) Điều khiển xe lạng lách hoặc đánh võng trên đường bộ trong, ngoài đô thị;\n- Phán quyết: không đủ thông tin.",
+      "retrieved_chunk_ids": [
+        "ND100_123__Dieu_17__Khoan_2",
+        "ND100_123__Dieu_35__Khoan_3",
+        "ND100_123__Dieu_6__Khoan_4__Diem_b__occ5",
+        "ND100_123__Dieu_6__Khoan_3__Diem_m",
+        "ND100_123__Dieu_8__Khoan_3"
+      ],
+      "citations_found": [],
+      "hallucinated_citations": [],
+      "is_valid_citation": true,
+      "metrics": {
+        "retrieval_precision": 0.5,
+        "calculation_accuracy": 0.0,
+        "hallucination_rate": 0.0
+      }
+    },
+    {
+      "id": "TC15",
+      "category": "Câu hỏi phức hợp đa hành vi",
+      "query": "Tôi đi xe máy chạy ngược chiều trên đường một chiều mà lại còn đâm công an thi hành công vụ bị thương thì chịu hình phạt như thế nào?",
+      "duration_seconds": 60.891668499985826,
+      "actual_answer": "Thực tế, không có thông tin cụ thể về việc bạn đã vi phạm các quy định trong <context> và bị thương do đâm công an thi hành công vụ. Tuy nhiên, nếu bạn đã vi phạm các quy định được đề cập trong đoạn văn bản này, như chạy ngược chiều đường một chiều hoặc đi ngược chiều trên đường có biển cấm đi ngược chiều, bạn sẽ bị xử phạt theo quy định của Nghị định 100/2019/NĐ-CP.\n\nTrong trường hợp này, nếu bạn đã vi phạm các quy định được đề cập và gây ra tai nạn giao thông hoặc không chấp hành hiệu lệnh dừng xe của người thi hành công vụ, bạn sẽ bị xử phạt theo quy định tại điểm i, khoản 4, Điều 6 Nghị định 100/2019/NĐ-CP.\n\nTuy nhiên, để có một kết quả chính xác và phù hợp với hoàn cảnh cụ thể, bạn nên liên hệ với cơ quan chức năng hoặc luật sư chuyên về lĩnh vực này để được tư vấn và hỗ trợ.",
+      "thought": "",
+      "retrieved_chunk_ids": [
+        "ND100_123__Dieu_6__Khoan_4__Diem_a__occ2",
+        "LUAT_TTATGT_2024__Dieu_15__Khoan_3",
+        "ND100_123__Dieu_7__Khoan_4",
+        "ND100_123__Dieu_8__Khoan_4",
+        "ND100_123__Dieu_6__Khoan_4__Diem_i"
+      ],
+      "citations_found": [
+        "ExtractedCitation(dieu=None, khoan=None, diem=None, nghi_dinh=('100', '2019'), qcvn=None)",
+        "ExtractedCitation(dieu='6', khoan='4', diem='i', nghi_dinh=('100', '2019'), qcvn=None)"
+      ],
+      "hallucinated_citations": [],
+      "is_valid_citation": true,
+      "metrics": {
+        "retrieval_precision": 0.3333333333333333,
+        "calculation_accuracy": 0.0,
+        "hallucination_rate": 0.0
+      }
+    }
+  ]
+}

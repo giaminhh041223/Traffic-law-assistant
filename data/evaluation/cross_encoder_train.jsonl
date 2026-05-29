@@ -1,0 +1,15 @@
+{"query": "Vượt đèn đỏ đối với xe ô tô bị phạt bao nhiêu tiền?", "positive_chunk_id": "ND100_dieu5_khoan5_a", "extra_positive_ids": ["ND100_dieu5_khoan11_b"], "manual_negative_ids": ["ND100_dieu6_khoan4_e"]}
+{"query": "Người điều khiển xe mô tô vượt đèn đỏ bị xử phạt như thế nào?", "positive_chunk_id": "ND100_dieu6_khoan4_e", "extra_positive_ids": [], "manual_negative_ids": ["ND100_dieu5_khoan5_a"]}
+{"query": "Nồng độ cồn vượt quá 80 mg/100 ml máu khi lái ô tô bị phạt bao nhiêu?", "positive_chunk_id": "ND100_dieu5_khoan10_a", "extra_positive_ids": ["ND100_dieu5_khoan11_e"], "manual_negative_ids": ["ND100_dieu6_khoan8_e"]}
+{"query": "Lái xe máy có nồng độ cồn trong máu vượt 80 mg/100 ml bị phạt thế nào?", "positive_chunk_id": "ND100_dieu6_khoan8_e", "extra_positive_ids": [], "manual_negative_ids": ["ND100_dieu5_khoan10_a"]}
+{"query": "Đi xe máy không đội mũ bảo hiểm bị phạt bao nhiêu tiền?", "positive_chunk_id": "ND100_dieu6_khoan2_i", "extra_positive_ids": [], "manual_negative_ids": []}
+{"query": "Chở người không đội mũ bảo hiểm trên xe gắn máy thì bị phạt như thế nào?", "positive_chunk_id": "ND100_dieu6_khoan3_k", "extra_positive_ids": [], "manual_negative_ids": ["ND100_dieu6_khoan2_i"]}
+{"query": "Xe ô tô chạy quá tốc độ quy định từ 10 đến 20 km/h bị phạt ra sao?", "positive_chunk_id": "ND100_dieu5_khoan4_a", "extra_positive_ids": [], "manual_negative_ids": ["ND100_dieu6_khoan4_a"]}
+{"query": "Xe máy chạy quá tốc độ từ 10 đến 20 km/h thì xử phạt thế nào?", "positive_chunk_id": "ND100_dieu6_khoan4_a", "extra_positive_ids": [], "manual_negative_ids": ["ND100_dieu5_khoan4_a"]}
+{"query": "Không có giấy phép lái xe ô tô khi điều khiển phương tiện thì bị xử lý ra sao?", "positive_chunk_id": "ND100_dieu21_khoan9_b", "extra_positive_ids": [], "manual_negative_ids": ["ND100_dieu21_khoan7_a"]}
+{"query": "Người điều khiển xe mô tô không có giấy phép lái xe bị phạt bao nhiêu?", "positive_chunk_id": "ND100_dieu21_khoan7_a", "extra_positive_ids": [], "manual_negative_ids": ["ND100_dieu21_khoan9_b"]}
+{"query": "Đỗ xe ô tô trên vỉa hè trái quy định bị phạt như thế nào?", "positive_chunk_id": "ND100_dieu5_khoan3_e", "extra_positive_ids": [], "manual_negative_ids": []}
+{"query": "Không chấp hành hiệu lệnh của người điều khiển giao thông khi lái xe ô tô thì bị phạt bao nhiêu?", "positive_chunk_id": "ND100_dieu5_khoan5_b", "extra_positive_ids": ["ND100_dieu5_khoan11_b"], "manual_negative_ids": ["ND100_dieu6_khoan4_g"]}
+{"query": "Đi ngược chiều trên đường một chiều với xe ô tô bị xử phạt như thế nào?", "positive_chunk_id": "ND100_dieu5_khoan5_c", "extra_positive_ids": ["ND100_dieu5_khoan11_c"], "manual_negative_ids": ["ND100_dieu6_khoan5_a"]}
+{"query": "Sử dụng điện thoại di động khi đang lái ô tô bị phạt như thế nào?", "positive_chunk_id": "ND100_dieu5_khoan4_h", "extra_positive_ids": [], "manual_negative_ids": ["ND100_dieu6_khoan3_h"]}
+{"query": "Mức phạt khi xe máy lưu thông trên đường cao tốc là bao nhiêu?", "positive_chunk_id": "ND100_dieu6_khoan6_b", "extra_positive_ids": [], "manual_negative_ids": []}

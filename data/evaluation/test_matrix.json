@@ -1,0 +1,107 @@
+[
+  {
+    "id": "TC01",
+    "category": "Tiếng lóng/Từ địa phương",
+    "user_query": "Em chạy con Wave tàu nẹt pô ầm ĩ ngoài phố thì bị bồ câu tuýt lại phạt bao nhiêu tiền hả anh?",
+    "expected_behavior": "Rewriter should translate 'Wave tàu' to 'xe mô tô', 'nẹt pô' to 'rú ga liên tục, nẹt pô, rú còi', 'bồ câu' to 'Cảnh sát giao thông'. Retrieval should fetch Điều 6 Khoản 3 Điểm c Nghị định 100/2019/NĐ-CP.",
+    "expected_ground_truth": "Phạt tiền từ 400.000 đồng đến 600.000 đồng đối với người điều khiển xe mô tô thực hiện hành vi rú ga liên tục, nẹt pô, rú còi trong đô thị, khu đông dân cư (Điểm c, Khoản 3, Điều 6 Nghị định 100/2019/NĐ-CP)."
+  },
+  {
+    "id": "TC02",
+    "category": "Tiếng lóng/Từ địa phương",
+    "user_query": "Em lái con xe cọp làm vài chén rượu say bí tỉ nồng độ cồn kịch khung bị giam xe bao nhiêu ngày?",
+    "expected_behavior": "Rewriter should map 'xe cọp' to 'xe mô tô độ', 'làm vài chén rượu' to 'nồng độ cồn', 'giam xe' to 'tạm giữ phương tiện'. Deconstructor should split into alcohol level and impoundment rules. Search should retrieve Điều 6 Khoản 8 Điểm e and Điều 82 Khoản 1 Điểm l.",
+    "expected_ground_truth": "Hành vi điều khiển xe mô tô trên đường mà trong máu hoặc hơi thở có nồng độ cồn vượt quá 80 mg/100 ml máu hoặc vượt quá 0,4 mg/l khí thở bị phạt từ 6.000.000 đồng đến 8.000.000 đồng (Điểm e, Khoản 8, Điều 6 Nghị định 100/2019/NĐ-CP). Để ngăn chặn ngay vi phạm, phương tiện có thể bị tạm giữ tối đa 7 ngày trước khi ra quyết định xử phạt (Khoản 8, Điều 82 Nghị định 100/2019/NĐ-CP)."
+  },
+  {
+    "id": "TC03",
+    "category": "Câu hỏi phức hợp đa hành vi",
+    "user_query": "Tôi lái xe hơi vượt đèn đỏ, không thắt dây an toàn khi lái xe chạy trên đường, sử dụng điện thoại bằng tay, và không có bảo hiểm bắt buộc. Hãy tính tổng mức phạt lớn nhất.",
+    "expected_behavior": "Deconstructor splits the query into 4 sub-queries, propagating 'xe ô tô' context to each. Retrieval fetches Điều 5 Khoản 5 Điểm a, Điều 5 Khoản 3 Điểm q (hoặc Khoản 3), Điều 5 Khoản 4 Điểm h, and Điều 21 Khoản 4 Điểm b. Sum of max fine amounts = 6M + 1M + 3M + 600k = 10,600,000 VND.",
+    "expected_ground_truth": "Tổng mức phạt lớn nhất là 10.600.000 đồng. Chi tiết từng lỗi: 1) Vượt đèn đỏ: 4.000.000đ - 6.000.000đ (Điểm a, Khoản 5, Điều 5); 2) Không thắt dây an toàn khi xe chạy: 800.000đ - 1.000.000đ (Khoản 3, Điều 5); 3) Dùng tay sử dụng điện thoại khi lái xe: 2.000.000đ - 3.000.000đ (Điểm h, Khoản 4, Điều 5); 4) Không có bảo hiểm bắt buộc: 400.000đ - 600.000đ (Điểm b, Khoản 4, Điều 21)."
+  },
+  {
+    "id": "TC04",
+    "category": "Tranh chấp/Biện hộ pháp lý",
+    "user_query": "Tôi bị CSGT lập biên bản lỗi đè vạch nhưng thực tế vạch kẻ đường ở đó đã bị mờ hoàn toàn và không có biển báo đi kèm. Tôi có quyền khiếu nại không và căn cứ vào quy định nào trong QCVN 41?",
+    "expected_behavior": "Retrieval should fetch QCVN 41 chunks concerning signaling effectiveness and priority (e.g. Điều 10, Điều 11). System must validate motorist's right to contest when markings are faded.",
+    "expected_ground_truth": "Bạn có quyền khiếu nại. Theo quy định của QCVN 41:2019/BGTVT, hiệu lực của hệ thống báo hiệu đường bộ phụ thuộc vào tính rõ ràng và dễ nhận biết. Vạch kẻ đường bị mờ hoàn toàn, không có biển báo hỗ trợ thì không đảm bảo tính rõ ràng để làm căn cứ xử phạt người tham gia giao thông."
+  },
+  {
+    "id": "TC05",
+    "category": "Tranh chấp/Biện hộ pháp lý",
+    "user_query": "Tôi chở người đi bệnh viện cấp cứu gấp bằng xe máy nên đã vượt đèn đỏ và chở ba. Tôi có bị phạt tiền không?",
+    "expected_behavior": "System needs to analyze emergency necessity exceptions. In Vietnamese law, violations in emergency state (chở người đi cấp cứu) are exempt from administrative penalties (Sự kiện bất khả kháng / Tình thế cấp thiết). Prompt should trigger narrative fit and narrative reasoning.",
+    "expected_ground_truth": "Bạn không bị xử phạt hành chính đối với các hành vi này. Theo Luật Xử lý vi phạm hành chính, người thực hiện hành vi vi phạm hành chính trong tình thế cấp thiết (ở đây là chở người đi cấp cứu) được miễn xử phạt. Tuy nhiên, bạn cần cung cấp bằng chứng chứng minh tình thế cấp thiết cho người có thẩm quyền."
+  },
+  {
+    "id": "TC06",
+    "category": "Thông tin sai lệch/Bẫy ảo giác",
+    "user_query": "Nghe nói bây giờ đi xe máy không đội mũ bảo hiểm bị phạt 5 triệu đồng và giam xe đúng không?",
+    "expected_behavior": "Trigger Anti-Leading Query rule (Guideline 7). Deny and correct the false fine amount of 5 million VND, replacing it with the actual 400k-600k VND under Nghị định 100/123, and state that the vehicle is not impounded.",
+    "expected_ground_truth": "Thông tin này hoàn toàn sai lệch. Theo quy định tại Điểm i, Khoản 2, Điều 6 Nghị định 100/2019/NĐ-CP (sửa đổi bổ sung bởi Nghị định 123/2021/NĐ-CP), hành vi không đội mũ bảo hiểm cho người đi mô tô, xe máy chỉ bị phạt tiền từ 400.000 đồng đến 600.000 đồng và không bị áp dụng hình thức tạm giữ phương tiện."
+  },
+  {
+    "id": "TC07",
+    "category": "Tranh chấp/Biện hộ pháp lý",
+    "user_query": "Đang đi xe máy gặp ngã tư có đèn xanh nhưng lại có biển báo cấm đi thẳng. Tôi phải tuân theo đèn hay biển báo?",
+    "expected_behavior": "Reranker fetches priority rules under QCVN 41 (Điều 11). System explains priority: Light signal > traffic sign. Motorist must follow light signal (go straight).",
+    "expected_ground_truth": "Bạn phải tuân theo hiệu lệnh của đèn tín hiệu giao thông (tức là được đi thẳng). Theo quy tắc ưu tiên tại Điều 11 QCVN 41:2019/BGTVT, hiệu lệnh của đèn tín hiệu giao thông có mức ưu tiên cao hơn biển báo hiệu đường bộ."
+  },
+  {
+    "id": "TC08",
+    "category": "Tiếng lóng/Từ địa phương",
+    "user_query": "Hôm qua em lái chiếc xe máy thông chốt rồi bị cớm giữ lại đòi xem tờ sớ mà em không mang theo thì ăn phạt bao nhiêu?",
+    "expected_behavior": "Rewriter maps 'thông chốt' to 'không chấp hành hiệu lệnh', 'cớm' to 'Cảnh sát giao thông', 'tờ sớ' to 'Giấy phép lái xe'. Search fetches Điều 6 Khoản 4 Điểm g (không chấp hành hiệu lệnh) and Điều 21 Khoản 2 Điểm c (không mang GPLX).",
+    "expected_ground_truth": "Tổng mức phạt là từ 1.100.000 đồng đến 2.200.000 đồng. Chi tiết: 1) Hành vi không chấp hành hiệu lệnh của người kiểm soát giao thông bị phạt từ 1.000.000 đồng đến 2.000.000 đồng (Điểm g, Khoản 4, Điều 6 Nghị định 100/2019/NĐ-CP); 2) Lỗi không mang theo Giấy phép lái xe bị phạt từ 100.000 đồng đến 200.000 đồng (Điểm c, Khoản 2, Điều 21 Nghị định 100/2019/NĐ-CP)."
+  },
+  {
+    "id": "TC09",
+    "category": "Câu hỏi phức hợp đa hành vi",
+    "user_query": "Tôi đi xe đạp điện làm vài chén rượu xong chạy ngược chiều trên phố thì bị phạt thế nào?",
+    "expected_behavior": "System maps electric bicycle to bicycle under Điều 8 (Guideline 1). Deconstructs into: 1) alcohol limit, 2) wrong way. Search retrieves Điều 8 Khoản 4 (alcohol) and Điều 8 Khoản 3 Điểm c (wrong way).",
+    "expected_ground_truth": "Xe đạp điện áp dụng chung mức xử phạt của xe đạp thông thường theo Điều 8. 1) Lỗi đi ngược chiều bị phạt tiền từ 300.000 đồng đến 400.000 đồng (Điểm c, Khoản 3, Điều 8 Nghị định 100/2019/NĐ-CP); 2) Hành vi có nồng độ cồn vượt quá 80 mg/100 ml máu hoặc 0,4 mg/l khí thở bị phạt tiền từ 400.000 đồng đến 600.000 đồng (Khoản 4, Điều 8 Nghị định 100/2019/NĐ-CP)."
+  },
+  {
+    "id": "TC10",
+    "category": "Thông tin sai lệch/Bẫy ảo giác",
+    "user_query": "Tôi đi xe máy lùi trên đường cao tốc bị phạt bao nhiêu tiền?",
+    "expected_behavior": "Enforce subject/vehicle type alignment in CitationValidator. Motorized motorcycles are strictly prohibited from entering highways (except for specialized vehicles). The highway reverse-driving rule strictly applies to cars only. Standard refusal or custom vehicle-mismatch refusal should be triggered.",
+    "expected_ground_truth": "Tôi không tìm thấy quy định phù hợp trong văn bản pháp luật được cung cấp để trả lời câu hỏi này. (Lỗi lùi xe trên đường cao tốc chỉ quy định đối với xe ô tô. Xe máy thông thường không được phép đi vào đường cao tốc theo quy định tại Điểm b, Khoản 6, Điều 6 Nghị định 100/2019/NĐ-CP)."
+  },
+  {
+    "id": "TC11",
+    "category": "Thông tin sai lệch/Bẫy ảo giác",
+    "user_query": "Cách thức nấu một bát phở bò Hà Nội thơm ngon chuẩn vị cần những nguyên liệu gì?",
+    "expected_behavior": "The query contains no traffic law keywords and is completely out-of-domain. RAG pipeline confidence gate or citation validation should trigger the standard refusal phrase.",
+    "expected_ground_truth": "Tôi không tìm thấy quy định phù hợp trong văn bản pháp luật được cung cấp để trả lời câu hỏi này."
+  },
+  {
+    "id": "TC12",
+    "category": "Câu hỏi phức hợp đa hành vi",
+    "user_query": "Con tôi mới 15 tuổi lái xe máy 110cc đi học bị bắt. Tôi là chủ xe giao xe cho cháu thì tôi bị phạt bao nhiêu và cháu bị phạt bao nhiêu?",
+    "expected_behavior": "Deconstructor splits into two intents: 1) Minor driving a >50cc motorcycle, 2) Owner handing over vehicle. Retrieval retrieves Điều 21 Khoản 1 (minor warning) and Điều 30 Khoản 5 Điểm đ (owner handover).",
+    "expected_ground_truth": "1) Đối với người con (15 tuổi): Chỉ bị xử phạt Cảnh cáo do người từ đủ 14 tuổi đến dưới 16 tuổi điều khiển xe mô tô, xe gắn máy (Khoản 1, Điều 21 Nghị định 100/2019/NĐ-CP); 2) Đối với cha mẹ (chủ xe): Bị phạt tiền từ 800.000 đồng đến 2.000.000 đồng vì giao xe cho người không đủ điều kiện điều khiển (Điểm đ, Khoản 5, Điều 30 Nghị định 100/2019/NĐ-CP)."
+  },
+  {
+    "id": "TC13",
+    "category": "Tranh chấp/Biện hộ pháp lý",
+    "user_query": "Tôi dừng xe sát lề đường để nghe điện thoại rồi đi ngay thì CSGT phạt lỗi đỗ xe có đúng không? Căn cứ luật nào phân biệt?",
+    "expected_behavior": "Retrieval retrieves definitions of stopping (dừng xe) vs parking (đỗ xe) under LUAT_TTATGT_2024 or Điều 5. System distinguishes based on time-limit (stopping is temporary, parking is indefinite).",
+    "expected_ground_truth": "CSGT phạt lỗi đỗ xe là không đúng nếu bạn chỉ dừng xe tạm thời. Theo Luật Trật tự, an toàn giao thông đường bộ 2024, dừng xe là trạng thái đứng yên tạm thời của phương tiện trong khoảng thời gian cần thiết để cho người lên, xuống xe, xếp dỡ hàng hóa hoặc thực hiện công việc khác. Còn đỗ xe là trạng thái đứng yên của phương tiện không giới hạn thời gian."
+  },
+  {
+    "id": "TC14",
+    "category": "Tiếng lóng/Từ địa phương",
+    "user_query": "Lái con Wave tàu lạng lách đánh võng mà không đóng bỉm thì bị phạt bao nhiêu?",
+    "expected_behavior": "Rewriter maps 'lạng lách' to 'lạng lách', 'đóng bỉm' to 'không gắn biển số / không có biển số'. Search fetches Điều 6 Khoản 8 Điểm g (lạng lách) and Điều 17 Khoản 1 Điểm m (không gắn biển số).",
+    "expected_ground_truth": "Tổng mức phạt là từ 6.300.000 đồng đến 8.400.000 đồng. Chi tiết: 1) Hành vi lạng lách, đánh võng bị phạt tiền từ 6.000.000 đồng đến 8.000.000 đồng (Điểm g, Khoản 8, Điều 6 Nghị định 100/2019/NĐ-CP); 2) Lỗi điều khiển xe không gắn biển số bị phạt tiền từ 300.000 đồng đến 400.000 đồng (Điểm m, Khoản 1, Điều 17 Nghị định 100/2019/NĐ-CP)."
+  },
+  {
+    "id": "TC15",
+    "category": "Câu hỏi phức hợp đa hành vi",
+    "user_query": "Tôi đi xe máy chạy ngược chiều trên đường một chiều mà lại còn đâm công an thi hành công vụ bị thương thì chịu hình phạt như thế nào?",
+    "expected_behavior": "Deconstruct into: 1) Traffic violation (wrong way), 2) Criminal / Dispute offense (resisting officer). AI Router should flag this as a 'cloud' complexity due to keyword 'chống người thi hành công vụ' or criminal nature.",
+    "expected_ground_truth": "Hành vi gồm 2 phần: 1) Xử phạt vi phạm giao thông: Đi ngược chiều trên đường một chiều bị phạt từ 1.000.000 đồng đến 2.000.000 đồng và tước quyền sử dụng GPLX từ 01 đến 03 tháng (Điểm g, Khoản 5, Điều 6 Nghị định 100/2019/NĐ-CP); 2) Trách nhiệm hình sự/Hành chính: Hành vi đâm công an thi hành công vụ có thể cấu thành tội Chống người thi hành công vụ theo Bộ luật Hình sự tùy thuộc vào tính chất và mức độ thương tích."
+  }
+]

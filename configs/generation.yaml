@@ -1,0 +1,132 @@
+# ============================================================
+# Generation configuration — Phase 4 (LLM + Citation Enforcement)
+# ============================================================
+
+llm:
+  # backend ∈ { "hf" | "ollama" | "openai" }
+  #   hf     : HuggingFace transformers, on-device (with optional bitsandbytes quantization)
+  #   ollama : local HTTP API at http://localhost:11434 (great for demos / Mac dev boxes)
+  #   openai : any OpenAI-compatible HTTP endpoint (base_url + api_key)
+  backend: "ollama"
+
+  # ---- HuggingFace backend -----------------------------------------
+  hf:
+    # Recommended VN-friendly instruction models. Pick ONE:
+    model_name: "Qwen/Qwen2-7B-Instruct"
+    # model_name: "meta-llama/Meta-Llama-3-8B-Instruct"
+    # model_name: "vilm/vinallama-7b-chat"   # native Vietnamese instruction tune
+
+    # Quantisation. Use 4-bit on most consumer GPUs (8-bit ≈ 2× memory).
+    quantization: "4bit"           # 4bit | 8bit | none
+    bnb_4bit_compute_dtype: "bfloat16"   # bfloat16 on Ampere+, float16 otherwise
+    bnb_4bit_quant_type: "nf4"
+    bnb_4bit_use_double_quant: true
+    device_map: "auto"
+    trust_remote_code: true
+    max_new_tokens: 512
+    temperature: 0.1               # near-deterministic — we want faithful legal answers
+    top_p: 0.9
+    repetition_penalty: 1.05
+    do_sample: false               # greedy by default; flip to true if you set temperature higher
+
+  # ---- Ollama backend ----------------------------------------------
+  ollama:
+    base_url: "http://localhost:11434"
+    model: "qwen2.5:1.5b"
+    max_new_tokens: 1024
+    temperature: 0.1
+
+  # ---- OpenAI-compatible backend -----------------------------------
+  openai:
+    base_url: "https://api.openai.com/v1"
+    model: "gpt-4o-mini"
+    api_key_env: "OPENAI_API_KEY"  # env-var name (we never store keys in YAML)
+    max_new_tokens: 1024
+    temperature: 0.1
+
+# ============================================================
+# Citation enforcement
+# ============================================================
+citation:
+  # If the LLM's answer contains zero recognisable citations, treat as failure
+  # (likely hallucinated / context-ignored answer).
+  require_at_least_one: true
+
+  # Patterns we recognise as legal citations. (Vietnamese point alphabet has no f/j/w/z.)
+  patterns:
+    dieu:     "(?i)Điều\\s+(\\d+)"
+    khoan:    "(?i)Khoản\\s+(\\d+)"
+    diem:     "(?i)Điểm\\s+([a-zđ])"
+    nghi_dinh: "(?i)Nghị[\\s_]*định\\s+(\\d+)\\s*/\\s*(\\d{4})\\s*/\\s*NĐ-?CP"
+    qcvn:     "(?i)QCVN\\s+([\\d:]+)"
+
+# ============================================================
+# RAG orchestration
+# ============================================================
+rag:
+  # Phase 2 hybrid retrieval pool (passes to the reranker).
+  hybrid_top_k: 15
+  # Phase 3 cross-encoder → Phase 4 LLM context size.
+  final_top_k: 3
+  # When the cross-encoder's top score is below this, we refuse to answer
+  # rather than risk a fluent-but-baseless reply. Calibrate per-model.
+  min_cross_encoder_score: null   # null disables the gate; set to e.g. 0.0 once you've calibrated
+
+  # Stop-words / patterns the LLM must NOT emit (sanity check post-gen).
+  forbidden_phrases:
+    - "theo tôi"
+    - "theo ý kiến cá nhân"
+    - "có thể là"
+
+# ============================================================
+# QLoRA fine-tuning
+# ============================================================
+lora_training:
+  base_model: "Qwen/Qwen2-7B-Instruct"
+  output_dir: "models/llm_qlora"
+
+  # Dataset (see data/evaluation/lora_train_schema.md)
+  train_file: "data/evaluation/lora_train.jsonl"
+  eval_file:  "data/evaluation/lora_eval.jsonl"
+
+  # ---- Quantisation (the "Q" in QLoRA) ----
+  load_in_4bit: true
+  bnb_4bit_compute_dtype: "bfloat16"
+  bnb_4bit_quant_type: "nf4"
+  bnb_4bit_use_double_quant: true
+
+  # ---- LoRA adapter ----
+  lora_r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  # Target modules: standard attention + MLP projections. Names vary by family —
+  # Qwen2 / Llama-3 both expose q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj.
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+
+  # ---- Optimiser ----
+  num_train_epochs: 3
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 16
+  learning_rate: 2.0e-4
+  warmup_ratio: 0.03
+  weight_decay: 0.0
+  max_grad_norm: 0.3
+  lr_scheduler_type: "cosine"
+  optim: "paged_adamw_8bit"     # bitsandbytes paged optimiser → fits big models on 1 GPU
+  max_seq_length: 1536
+  bf16: true
+  fp16: false
+
+  logging_steps: 10
+  save_steps: 100
+  eval_steps: 100
+  save_total_limit: 3
+  seed: 42

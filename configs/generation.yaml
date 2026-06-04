@@ -35,6 +35,11 @@ llm:
     model: "qwen2.5:1.5b"
     max_new_tokens: 1024
     temperature: 0.1
+    num_ctx: 3072
+    num_gpu: 1              # Enable GPU for Ollama
+    timeout: 1200             # 10 min for slow first-load on limited RAM
+    keep_alive: "10m"        # keep model warm in RAM between requests
+    repetition_penalty: 1.15
 
   # ---- OpenAI-compatible backend -----------------------------------
   openai:

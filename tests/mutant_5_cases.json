@@ -1,0 +1,39 @@
+{
+  "test_cases": [
+    {
+      "id": "TC21",
+      "test_type": "Thiếu chủ ngữ phương tiện",
+      "user_query": "Đi xe vào đường 1 chiều bị xử phạt ntn",
+      "expected_keywords": ["đường một chiều", "Điểm c", "Khoản 5", "Điều 5", "Điểm i", "Khoản 3", "Điều 6"],
+      "ground_truth_logic": "Truy vấn thiếu phương tiện, Deconstructor phải tự động tách thành xe ô tô (Điều 5) và xe máy (Điều 6)."
+    },
+    {
+      "id": "TC22",
+      "test_type": "Từ khóa viết tắt phổ biến",
+      "user_query": "Không có gplx phạt bao nhiêu?",
+      "expected_keywords": ["Giấy phép lái xe", "Khoản 5", "Khoản 7", "Điều 21"],
+      "ground_truth_logic": "Từ khóa gplx phải được rewrite thành Giấy phép lái xe và tự động thêm phương tiện ô tô/máy."
+    },
+    {
+      "id": "TC23",
+      "test_type": "Lỗi hỗn hợp không phương tiện",
+      "user_query": "Vượt đèn đỏ và không đội mũ bảo hiểm",
+      "expected_keywords": ["không chấp hành hiệu lệnh của đèn tín hiệu", "mũ bảo hiểm", "Điều 6"],
+      "ground_truth_logic": "Mũ bảo hiểm ám chỉ xe máy, do đó deconstructor phải tự gán xe máy cho cả câu."
+    },
+    {
+      "id": "TC24",
+      "test_type": "Lỗi kép xe cụ thể",
+      "user_query": "Lái xe tải chạy quá tốc độ 15km/h và lấn làn",
+      "expected_keywords": ["ô tô", "quá tốc độ", "không đúng phần đường", "Điều 5"],
+      "ground_truth_logic": "xe tải = ô tô, lấn làn = không đúng làn đường. Cần lấy cả 2 lỗi ở Điều 5."
+    },
+    {
+      "id": "TC25",
+      "test_type": "Từ lóng chưa được map",
+      "user_query": "Đậu xe trên vạch kẻ đường dành cho người đi bộ",
+      "expected_keywords": ["đỗ xe", "phần đường dành cho người đi bộ", "Điều 5", "Điều 6"],
+      "ground_truth_logic": "Đậu xe = dừng xe, đỗ xe."
+    }
+  ]
+}

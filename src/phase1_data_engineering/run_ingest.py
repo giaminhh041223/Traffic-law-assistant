@@ -13,7 +13,7 @@ import argparse
 import sys
 from dataclasses import asdict
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from loguru import logger
 
@@ -111,6 +111,7 @@ def ingest_csv_source(
     max_chunk_chars: int,
     emit_dieu_when_no_khoan: bool,
     emit_structural_headings: bool,
+    filter_doc_short: Optional[str] = None,
 ) -> List[Dict]:
     """Process a structured CSV source (e.g. metadata_luat.csv) into chunk records."""
     chunks = ingest_csv(
@@ -121,6 +122,7 @@ def ingest_csv_source(
         max_chunk_chars=max_chunk_chars,
         emit_dieu_when_no_khoan=emit_dieu_when_no_khoan,
         emit_structural_headings=emit_structural_headings,
+        filter_doc_short=filter_doc_short,
     )
     return [attach_metadata(c) for c in chunks]
 
@@ -128,7 +130,7 @@ def ingest_csv_source(
 def main():
     parser = argparse.ArgumentParser(description="Phase 1 ingestion CLI")
     parser.add_argument("--config", default="configs/settings.yaml")
-    parser.add_argument("--doc", default=None, help="Ingest a single registered doc (key in settings.documents or settings.csv_sources)")
+    parser.add_argument("--doc", default=None, help="Ingest a single registered doc (key in csv_sources, or a specific doc_short)")
     parser.add_argument("--granularity", default=None, choices=["dieu", "khoan", "diem"])
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
@@ -146,70 +148,92 @@ def main():
     emit_dieu_when_no_khoan = chunking_cfg.get("emit_dieu_when_no_khoan", True)
     emit_structural_headings = chunking_cfg.get("emit_structural_headings", False)
 
-    docs_cfg = cfg.get("documents", {}) or {}
     csv_cfg = cfg.get("csv_sources", {}) or {}
+    metadata_cfg = csv_cfg.get("metadata", {})
 
-    if args.doc:
-        if args.doc in docs_cfg:
-            pdf_targets = {args.doc: docs_cfg[args.doc]}
-            csv_targets = {}
-        elif args.doc in csv_cfg:
-            pdf_targets = {}
-            csv_targets = {args.doc: csv_cfg[args.doc]}
-        else:
-            logger.error(
-                f"Unknown doc key: {args.doc}. Available PDF docs: {list(docs_cfg.keys())}; "
-                f"Available CSV sources: {list(csv_cfg.keys())}"
-            )
-            sys.exit(2)
-    else:
-        pdf_targets = docs_cfg
-        csv_targets = csv_cfg
+    if not metadata_cfg:
+        logger.error("No 'metadata' CSV source registered in configs/settings.yaml")
+        sys.exit(2)
+
+    csv_path = raw_dir / metadata_cfg["file"]
+    if not csv_path.exists():
+        logger.error(f"Missing consolidated CSV file at: {csv_path}")
+        sys.exit(2)
+
+    # Determine filter_doc_short
+    filter_doc_short = None
+    if args.doc and args.doc not in ["metadata", "CONSOLIDATED"]:
+        filter_doc_short = args.doc
 
     all_chunks: List[Dict] = []
     all_tables: List[Dict] = []
 
-    # ---------------- PDF sources ----------------
-    for key, meta in pdf_targets.items():
-        pdf_path = raw_dir / f"{key}.pdf"
-        if not pdf_path.exists():
-            logger.warning(f"Missing PDF: {pdf_path} — skipping")
-            continue
-        chunks, tables = ingest_document(
-            pdf_path=pdf_path,
-            source_doc=meta["title"],
-            doc_short=meta["short"],
-            granularity=granularity,
-            max_chunk_chars=max_chars,
-            emit_dieu_when_no_khoan=emit_dieu_when_no_khoan,
-            emit_structural_headings=emit_structural_headings,
-        )
-        all_chunks.extend(chunks)
-        all_tables.extend(tables)
+    # Process text chunks from consolidated CSV
+    logger.info(f"Ingesting text chunks from consolidated CSV: {csv_path.name}")
+    chunks = ingest_csv_source(
+        csv_path=csv_path,
+        source_doc=metadata_cfg["title"],
+        doc_short=metadata_cfg["short"],
+        granularity=granularity,
+        max_chunk_chars=max_chars,
+        emit_dieu_when_no_khoan=emit_dieu_when_no_khoan,
+        emit_structural_headings=emit_structural_headings,
+        filter_doc_short=filter_doc_short,
+    )
+    all_chunks.extend(chunks)
 
-    # ---------------- CSV sources ----------------
-    for key, meta in csv_targets.items():
-        csv_path = raw_dir / meta["file"]
-        if not csv_path.exists():
-            logger.warning(f"Missing CSV: {csv_path} — skipping")
-            continue
-        chunks = ingest_csv_source(
-            csv_path=csv_path,
-            source_doc=meta["title"],
-            doc_short=meta["short"],
-            granularity=granularity,
-            max_chunk_chars=max_chars,
-            emit_dieu_when_no_khoan=emit_dieu_when_no_khoan,
-            emit_structural_headings=emit_structural_headings,
-        )
-        all_chunks.extend(chunks)
+    # Process tables from PDFs
+    PDF_STEM_MAPPING = {
+        "QCVN41_TT": "QCVN_41_2024",
+        "QCVN41_2024": "QCVN_41_2024_attachment",
+    }
+    DOC_TITLE_MAPPING = {
+        "QCVN41_TT": "Thông tư 51/2024/TT-BGTVT ban hành QCVN 41:2024/BGTVT",
+        "QCVN41_2024": "QCVN 41:2024/BGTVT — Quy chuẩn kỹ thuật quốc gia về báo hiệu đường bộ",
+        "LUAT_TTATGT_2024": "Luật Trật tự, An toàn Giao thông Đường bộ (Luật 36/2024/QH15)",
+        "LUAT_DUONGBO_2024": "Luật Đường bộ 2024 (Luật 35/2024/QH15)",
+        "ND168_2024": "Nghị định 168/2024/NĐ-CP quy định xử phạt vi phạm hành chính về trật tự, an toàn giao thông đường bộ; trừ điểm, phục hồi điểm giấy phép lái xe",
+        "TT30_2024": "Thông tư 30/2024/TT-BGTVT sửa đổi, bổ dung một số điều về kiểm định an toàn kỹ thuật và bảo vệ môi trường xe cơ giới",
+        "ND336_2025": "Nghị định 336/2025/NĐ-CP quy định xử phạt vi phạm hành chính trong hoạt động đường bộ",
+        "TT38_2024": "Thông tư 38/2024/TT-BGTVT quy định về tốc độ và khoảng cách an toàn của xe cơ giới, xe máy chuyên dùng",
+        "ND94_2026": "Nghị định 94/2026/NĐ-CP quy định về hoạt động đào tạo và sát hạch lái xe",
+        "TT73_2024": "Thông tư 73/2024/TT-BCA quy định công tác tuần tra, kiểm soát, xử lý vi phạm pháp luật về trật tự, an toàn giao thông đường bộ của CSGT",
+        "ND67_2023": "Nghị định 67/2023/NĐ-CP quy định về bảo hiểm bắt buộc trách nhiệm dân sự của chủ xe cơ giới, bảo hiểm cháy, nổ bắt buộc, bảo hiểm bắt buộc trong hoạt động đầu tư xây dựng",
+        "TT36_2024": "Thông tư 36/2024/TT-BYT quy định về tiêu chuẩn sức khỏe, việc khám sức khỏe đối với người lái xe, người điều khiển xe máy chuyên dùng; việc khám sức khỏe định kỳ đối với người hành nghề lái xe ô tô; cơ sở dữ liệu về sức khỏe của người lái xe, người điều khiển xe máy chuyên dùng",
+        "TT35_2024": "Thông tư 35/2024/TT-BGTVT quy định về đào tạo, sát hạch, cấp giấy phép lái xe; cấp, sử dụng giấy phép lái xe quốc tế; đào tạo, kiểm tra, cấp chứng chỉ bồi dưỡng kiến thức pháp luật về giao thông đường bộ",
+        "TT47_2024": "Thông tư 47/2024/TT-BGTVT quy định trình tự, thủ tục kiểm định, miễn kiểm định lần đầu cho xe cơ giới, xe máy chuyên dùng; trình tự, thủ tục chứng nhận an toàn kỹ thuật và bảo vệ môi trường đối với xe cơ giới cải tạo, xe máy chuyên dùng cải tạo; trình tự, thủ tục kiểm định khí thải xe mô tô, xe gắn máy",
+        "ND166_2024": "Nghị định 166/2024/NĐ-CP quy định về điều kiện kinh doanh dịch vụ kiểm định xe cơ giới; tổ chức, hoạt động của cơ sở đăng kiểm; niên hạn sử dụng của xe cơ giới",
+        "ND158_2024": "Nghị định 158/2024/NĐ-CP quy định về hoạt động vận tải đường bộ",
+        "ND165_2024": "Nghị định 165/2024/NĐ-CP quy định chi tiết, hướng dẫn thi hành một số điều của Luật Đường bộ và Điều 77 Luật Trật tự, an toàn giao thông đường bộ",
+        "TT72_2024": "Thông tư 72/2024/TT-BCA quy định công tác điều tra, giải quyết tai nạn giao thông đường bộ của lực lượng CSGT",
+        "TT69_2024": "Thông tư 69/2024/TT-BCA quy định về công tác chỉ huy, điều khiển giao thông đường bộ của lực lượng CSGT",
+        "TT65_2024": "Thông tư 65/2024/TT-BCA quy định về kiểm tra kiến thức pháp luật về trật tự, an toàn giao thông đường bộ",
+        "TT39_2024": "Thông tư 39/2024/TT-BGTVT quy định về tải trọng, khổ giới hạn của đường bộ; lưu hành xe quá tải trọng, xe quá khổ giới hạn, xe bánh xích; vận chuyển hàng siêu trường, siêu trọng",
+        "ND161_2024": "Nghị định 161/2024/NĐ-CP quy định về vận chuyển hàng hóa nguy hiểm bằng phương tiện giao thông cơ giới đường bộ và phương tiện thủy nội địa",
+        "TT51_2025": "Thông tư 51/2025/TT-BCA sửa đổi, bổ sung một số điều của Thông tư 79/2024/TT-BCA quy định về cấp, thu hồi chứng nhận đăng ký xe, biển số xe cơ giới, xe máy chuyên dùng",
+        "TT79_2024": "Thông tư 79/2024/TT-BCA quy định về cấp, thu hồi chứng nhận đăng ký xe, biển số xe cơ giới, xe máy chuyên dùng",
+        "ND160_2024": "Nghị định 160/2024/NĐ-CP quy định về đào tạo và sát hạch lái xe",
+        "ND151_2024": "Nghị định 151/2024/NĐ-CP quy định chi tiết một số điều của Luật Trật tự, an toàn giao thông đường bộ về giáo dục kiến thức pháp luật, cơ sở dữ liệu và trách nhiệm quản lý nhà nước",
+    }
+
+    active_docs = set()
+    if filter_doc_short:
+        active_docs = {filter_doc_short}
+    else:
+        active_docs = set(DOC_TITLE_MAPPING.keys())
+
+    for d_short in active_docs:
+        stem = PDF_STEM_MAPPING.get(d_short)
+        if stem:
+            pdf_path = raw_dir / f"{stem}.pdf"
+            if pdf_path.exists():
+                logger.info(f"Extracting tables for {d_short} from PDF: {pdf_path.name}")
+                tables = TableExtractor(doc_short=d_short).extract(pdf_path)
+                logger.info(f"  → {len(tables)} tables")
+                table_records = [table_to_chunk(t, DOC_TITLE_MAPPING[d_short], d_short) for t in tables]
+                all_tables.extend(table_records)
 
     # ---- Disambiguate duplicate chunk_ids ----
-    # In long consolidated decrees (VBHN) the chunker can occasionally collide
-    # on (Điều, Khoản, Điểm) — typically when a Mục boundary or a line-break
-    # artifact tricks the state machine into resetting the Điểm sequence. The
-    # text itself is real and we want to KEEP it for the retrieval index, but
-    # Chroma requires unique IDs, so we append a `__occN` suffix to collisions.
     seen_ids: Dict[str, int] = {}
     n_disambiguated = 0
     for c in all_chunks:
@@ -242,7 +266,6 @@ def main():
 
     if args.dry_run:
         logger.info("--dry-run: not writing output files.")
-        # Show a sample.
         for c in all_chunks[:2]:
             logger.info(f"SAMPLE chunk:\n  citation: {c['full_citation']}\n  text: {c['text'][:180]}…")
         return

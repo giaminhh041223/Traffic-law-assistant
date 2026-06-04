@@ -27,16 +27,46 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 from loguru import logger
 
+# Move heavy imports to top level to avoid thread deadlocks during chromadb execution
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, message=".*torch.classes.*")
+try:
+    import torch
+    try:
+        torch.classes.__path__ = []
+    except Exception:
+        pass
+    from sentence_transformers import CrossEncoder
+except ImportError as e:
+    logger.warning(f"Could not import torch/CrossEncoder at top level: {e}")
+
 from src.utils.io import load_yaml
 from src.utils.vn_tokenizer import VnTokenizer
 
 
-def _resolve_device(device: str) -> str:
+def _resolve_device(device: str, min_free_mb: int = 300) -> str:
+    """Resolve 'auto' to 'cuda' or 'cpu' with VRAM awareness.
+
+    On small-VRAM GPUs (e.g. MX550, 2 GB) we must avoid OOM by checking
+    free memory before committing to CUDA.  If fewer than ``min_free_mb``
+    MB are available the function falls back to CPU and logs a warning.
+    """
     if device != "auto":
         return device
     try:
-        import torch
-        return "cuda" if torch.cuda.is_available() else "cpu"
+        if not torch.cuda.is_available():
+            return "cpu"
+        free, total = torch.cuda.mem_get_info(0)
+        free_mb = free / (1024 ** 2)
+        total_mb = total / (1024 ** 2)
+        if free_mb < min_free_mb:
+            logger.warning(
+                f"GPU VRAM thấp ({free_mb:.0f}/{total_mb:.0f} MB free) "
+                f"— fallback sang CPU để tránh OOM"
+            )
+            return "cpu"
+        logger.info(f"GPU VRAM OK ({free_mb:.0f}/{total_mb:.0f} MB free) → dùng CUDA")
+        return "cuda"
     except Exception:
         return "cpu"
 
@@ -72,13 +102,25 @@ class CrossEncoderReranker:
     @property
     def model(self):
         if self._model is None and self._predictor is None:
-            from sentence_transformers import CrossEncoder
             logger.info(f"Loading CrossEncoder '{self.model_name}' on {self.device} …")
-            self._model = CrossEncoder(
-                self.model_name,
-                max_length=self.max_length,
-                device=self.device,
-            )
+            try:
+                self._model = CrossEncoder(
+                    self.model_name,
+                    max_length=self.max_length,
+                    device=self.device,
+                )
+            except (torch.cuda.OutOfMemoryError, RuntimeError) as e:
+                if self.device == "cuda" and ("out of memory" in str(e).lower() or "CUDA" in str(e)):
+                    logger.warning(f"GPU OOM khi load CrossEncoder — fallback sang CPU: {e}")
+                    torch.cuda.empty_cache()
+                    self.device = "cpu"
+                    self._model = CrossEncoder(
+                        self.model_name,
+                        max_length=self.max_length,
+                        device="cpu",
+                    )
+                else:
+                    raise
         return self._model
 
     @property
@@ -97,11 +139,12 @@ class CrossEncoderReranker:
             parts.append(chunk["full_citation"])
         if self.include_dieu_title and chunk.get("dieu_title"):
             parts.append(chunk["dieu_title"])
+        chunk_text = ""
         # For TABLE chunks, prefer the linear form (no markdown noise).
         if chunk.get("chunk_type") == "table" and chunk.get("linear_form"):
-            parts.append(chunk["linear_form"])
+            chunk_text = chunk.get("linear_form")
         else:
-            parts.append(chunk.get("text", ""))
+            chunk_text = chunk.get("text", "")
 
         # Lexicon Expansion: Map metadata tags back to fluent, natural Vietnamese sentences.
         # This keeps the Cross-Encoder's text aligned with the indexes.
@@ -151,6 +194,9 @@ class CrossEncoderReranker:
         if natural_parts:
             parts.append(" ".join(natural_parts))
 
+        if chunk_text:
+            parts.append(chunk_text)
+
         return ". ".join(p for p in parts if p)
 
     # ----------------------------- inference -----------------------------
@@ -184,12 +230,41 @@ class CrossEncoderReranker:
         if self._predictor is not None:
             scores = list(self._predictor(pairs))
         else:
-            scores = self.model.predict(
-                pairs,
-                batch_size=self.batch_size,
-                show_progress_bar=False,
-            )
-            scores = [float(s) for s in scores]
+            try:
+                model = self.model
+                scores = model.predict(
+                    pairs,
+                    batch_size=self.batch_size,
+                    show_progress_bar=False,
+                )
+                scores = [float(s) for s in scores]
+            except Exception as e:
+                # If using cuda, retry on CPU
+                if "cuda" in str(self.device).lower():
+                    logger.warning(f"GPU Error/OOM during CrossEncoder prediction. Fallback to CPU: {e}")
+                    try:
+                        import torch
+                        torch.cuda.empty_cache()
+                    except Exception:
+                        pass
+                    try:
+                        self.device = "cpu"
+                        self._model = None  # Force reload on CPU
+                        model = self.model
+                        scores = model.predict(
+                            pairs,
+                            batch_size=self.batch_size,
+                            show_progress_bar=False,
+                        )
+                        scores = [float(s) for s in scores]
+                    except Exception as inner_e:
+                        logger.error(f"CrossEncoder CPU fallback retry failed: {inner_e}")
+                        # Fallback to RRF ordering
+                        scores = [float(len(candidates) - i) for i in range(len(candidates))]
+                else:
+                    logger.warning(f"CrossEncoder reranking failed, falling back gracefully to original RRF ranking: {e}")
+                    # Mock scores matching RRF ranks to preserve input ordering
+                    scores = [float(len(candidates) - i) for i in range(len(candidates))]
 
         if len(scores) != len(candidates):
             raise RuntimeError(

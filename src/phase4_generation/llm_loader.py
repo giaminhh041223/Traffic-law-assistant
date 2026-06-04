@@ -19,6 +19,17 @@ Lazy imports:
 from __future__ import annotations
 
 import os
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, message=".*torch.classes.*")
+try:
+    import torch
+    try:
+        torch.classes.__path__ = []
+    except Exception:
+        pass
+except ImportError:
+    pass
+
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Union
 
@@ -196,16 +207,25 @@ class LLMClient:
 
         cfg = self.config
         url = cfg["base_url"].rstrip("/") + "/api/chat"
+        options = {
+                "temperature": temperature if temperature is not None else cfg.get("temperature", 0.1),
+                "num_predict": max_new_tokens or cfg.get("max_new_tokens", 512),
+                "num_ctx": cfg.get("num_ctx", 2048),
+                "repeat_penalty": cfg.get("repetition_penalty", 1.1),
+            }
+        # Allow forcing CPU-only inference via num_gpu: 0 in config
+        if "num_gpu" in cfg:
+            options["num_gpu"] = cfg["num_gpu"]
         payload = {
             "model": cfg["model"],
             "messages": messages,
             "stream": False,
-            "options": {
-                "temperature": temperature if temperature is not None else cfg.get("temperature", 0.1),
-                "num_predict": max_new_tokens or cfg.get("max_new_tokens", 512),
-            },
+            "keep_alive": cfg.get("keep_alive", "10m"),
+            "options": options,
         }
-        r = requests.post(url, json=payload, timeout=300)
+        timeout = cfg.get("timeout", 600)  # 10 min for slow GPUs (first-load)
+        logger.info(f"Ollama request → {cfg['model']} (timeout={timeout}s)")
+        r = requests.post(url, json=payload, timeout=timeout)
         r.raise_for_status()
         data = r.json()
         # Ollama's response shape: {message: {role, content}, ...}

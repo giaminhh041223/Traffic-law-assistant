@@ -27,6 +27,19 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from loguru import logger
 
+# Move heavy imports to top level to avoid thread deadlocks during chromadb lazy execution
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, message=".*torch.classes.*")
+try:
+    import torch
+    try:
+        torch.classes.__path__ = []
+    except Exception:
+        pass
+    from sentence_transformers import SentenceTransformer
+except ImportError as e:
+    logger.warning(f"Could not import torch/sentence_transformers at top level: {e}")
+
 from src.utils.vn_tokenizer import VnTokenizer
 
 FilterValue = Union[str, int, float, bool, List[Union[str, int, float, bool]]]
@@ -36,15 +49,32 @@ FilterDict = Dict[str, FilterValue]
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-def _resolve_device(device: str) -> str:
-    """auto → cuda if available, else cpu."""
+def _resolve_device(device: str, min_free_mb: int = 300) -> str:
+    """Resolve 'auto' to 'cuda' or 'cpu' with VRAM awareness.
+
+    On small-VRAM GPUs (e.g. MX550, 2 GB) we must avoid OOM by checking
+    free memory before committing to CUDA.  If fewer than ``min_free_mb``
+    MB are available the function falls back to CPU and logs a warning.
+    """
     if device != "auto":
         return device
     try:
-        import torch
-        return "cuda" if torch.cuda.is_available() else "cpu"
+        if not torch.cuda.is_available():
+            return "cpu"
+        free, total = torch.cuda.mem_get_info(0)
+        free_mb = free / (1024 ** 2)
+        total_mb = total / (1024 ** 2)
+        if free_mb < min_free_mb:
+            logger.warning(
+                f"GPU VRAM thấp ({free_mb:.0f}/{total_mb:.0f} MB free) "
+                f"— fallback sang CPU để tránh OOM"
+            )
+            return "cpu"
+        logger.info(f"GPU VRAM OK ({free_mb:.0f}/{total_mb:.0f} MB free) → dùng CUDA")
+        return "cuda"
     except Exception:
         return "cpu"
+
 
 
 def _coerce_scalar(v: Any) -> Optional[Any]:
@@ -101,8 +131,6 @@ class DenseRetriever:
     @property
     def model(self):
         if self._model is None:
-            from sentence_transformers import SentenceTransformer
-            import torch
             dev = _resolve_device(self.device)
             logger.info(f"Loading SBERT model '{self.model_name}' on {dev} …")
             if dev == "cpu":
@@ -116,7 +144,15 @@ class DenseRetriever:
                 except Exception as e:
                     logger.debug(f"Failed to set_num_interop_threads: {e}")
                 logger.info(f"Configured PyTorch CPU threads: num_threads={threads}, interop_threads={threads}")
-            self._model = SentenceTransformer(self.model_name, device=dev)
+            try:
+                self._model = SentenceTransformer(self.model_name, device=dev)
+            except (torch.cuda.OutOfMemoryError, RuntimeError) as e:
+                if dev == "cuda" and ("out of memory" in str(e).lower() or "CUDA" in str(e)):
+                    logger.warning(f"GPU OOM khi load SBERT — fallback sang CPU: {e}")
+                    torch.cuda.empty_cache()
+                    self._model = SentenceTransformer(self.model_name, device="cpu")
+                else:
+                    raise
             self._model.max_seq_length = self.max_seq_length
         return self._model
 
@@ -184,13 +220,28 @@ class DenseRetriever:
             texts_to_encode = texts
 
         logger.info(f"Encoding {len(texts_to_encode)} chunks (batch_size={self.batch_size}) …")
-        embeddings = self.model.encode(
-            texts_to_encode,
-            batch_size=self.batch_size,
-            normalize_embeddings=self.normalize_embeddings,
-            show_progress_bar=True,
-            convert_to_numpy=True,
-        )
+        try:
+            embeddings = self.model.encode(
+                texts_to_encode,
+                batch_size=self.batch_size,
+                normalize_embeddings=self.normalize_embeddings,
+                show_progress_bar=True,
+                convert_to_numpy=True,
+            )
+        except (torch.cuda.OutOfMemoryError, RuntimeError) as e:
+            if "cuda" in str(self.model.device).lower():
+                logger.warning(f"GPU OOM/Error during dense index encoding. Fallback to CPU: {e}")
+                torch.cuda.empty_cache()
+                self.model.to("cpu")
+                embeddings = self.model.encode(
+                    texts_to_encode,
+                    batch_size=self.batch_size,
+                    normalize_embeddings=self.normalize_embeddings,
+                    show_progress_bar=True,
+                    convert_to_numpy=True,
+                )
+            else:
+                raise
 
         # ChromaDB has a default max add batch of ~5000. Chunk just in case.
         coll = self.collection
@@ -224,19 +275,47 @@ class DenseRetriever:
         """Return [(chunk_id, similarity)] — similarity in [-1, 1] for cosine."""
         if not query.strip():
             return []
+        
+        # Access collection first so we fail fast before loading heavy model weights.
+        coll = self.collection
+        _ = coll.count()  # Trigger a read to throw SQLite exception immediately if ChromaDB is broken
+
         q = self.tokenizer.segment(query) if self.segment_input else query
-        q_emb = self.model.encode(
-            [q],
-            normalize_embeddings=self.normalize_embeddings,
-            convert_to_numpy=True,
-            show_progress_bar=False,
-        )[0]
+        try:
+            q_emb = self.model.encode(
+                [q],
+                normalize_embeddings=self.normalize_embeddings,
+                convert_to_numpy=True,
+                show_progress_bar=False,
+            )[0]
+        except Exception as e:
+            # If current model device is CUDA or config is cuda, fallback to CPU
+            model_device = getattr(self._model, "device", None)
+            is_cuda = (model_device and "cuda" in str(model_device).lower()) or "cuda" in str(self.device).lower()
+            if is_cuda:
+                logger.warning(f"GPU Error/OOM during dense search encoding. Fallback to CPU: {e}")
+                try:
+                    import torch
+                    torch.cuda.empty_cache()
+                except Exception:
+                    pass
+                self.device = "cpu"
+                self._model = None  # Force reload on CPU
+                q_emb = self.model.encode(
+                    [q],
+                    normalize_embeddings=self.normalize_embeddings,
+                    convert_to_numpy=True,
+                    show_progress_bar=False,
+                )[0]
+            else:
+                raise
 
         where = self._translate_filters(filters) if filters else None
-        coll = self.collection
+
+        emb_list = [float(x) for x in q_emb]
 
         res = coll.query(
-            query_embeddings=[q_emb.tolist()],
+            query_embeddings=[emb_list],
             n_results=min(top_k, max(1, coll.count())),
             where=where,
         )
@@ -310,7 +389,11 @@ class DenseRetriever:
     # ----------------------------- introspection -----------------------------
 
     def count(self) -> int:
-        return self.collection.count()
+        try:
+            return self.collection.count()
+        except Exception as e:
+            logger.warning(f"Could not count ChromaDB collection (falling back to 0): {e}")
+            return 0
 
     @classmethod
     def from_config(cls, cfg: Dict[str, Any]) -> "DenseRetriever":

@@ -53,8 +53,8 @@ def _normalize_row_content(text: str) -> str:
     return text
 
 
-def build_synthetic_document(csv_path: Path) -> str:
-    """Reconstruct a synthetic Vietnamese-legal-format document from the CSV.
+def build_synthetic_document(df: pd.DataFrame) -> str:
+    """Reconstruct a synthetic Vietnamese-legal-format document from a DataFrame.
 
     Output mimics how a decree reads top-to-bottom so the line-based
     `SemanticChunker` can walk it exactly as it walks PDF text:
@@ -68,25 +68,24 @@ def build_synthetic_document(csv_path: Path) -> str:
         Điều N. <title>
         …
     """
-    df = pd.read_csv(csv_path)
     required = {"chapter_number", "chapter_title", "article_number", "article_title", "content"}
     missing = required - set(df.columns)
     if missing:
-        raise ValueError(f"CSV missing required columns: {missing}")
+        raise ValueError(f"DataFrame missing required columns: {missing}")
 
     parts: List[str] = []
     current_chapter: str = ""
     for _, row in df.iterrows():
-        chap = str(row["chapter_number"]).strip()
-        chap_title = str(row["chapter_title"]).strip()
+        chap = str(row["chapter_number"]).strip() if pd.notna(row["chapter_number"]) else ""
+        chap_title = str(row["chapter_title"]).strip() if pd.notna(row["chapter_title"]) else ""
         if chap and chap != current_chapter:
             # Heading line — the chunker's _CHUONG_RE will pick this up.
             parts.append(f"{chap}. {chap_title}")
             current_chapter = chap
 
-        art_num = str(row["article_number"]).strip()
-        art_title = str(row["article_title"]).strip()
-        content = _normalize_row_content(str(row["content"]))
+        art_num = str(row["article_number"]).strip() if pd.notna(row["article_number"]) else ""
+        art_title = str(row["article_title"]).strip() if pd.notna(row["article_title"]) else ""
+        content = _normalize_row_content(str(row["content"])) if pd.notna(row["content"]) else ""
 
         # Heading line — _DIEU_RE picks this up.
         parts.append(f"Điều {art_num}. {art_title}")
@@ -105,26 +104,53 @@ def ingest_csv(
     max_chunk_chars: int = 1800,
     emit_dieu_when_no_khoan: bool = True,
     emit_structural_headings: bool = False,
+    filter_doc_short: Optional[str] = None,
 ) -> List[LegalChunk]:
     """End-to-end: CSV → list of `LegalChunk` objects ready to be JSONL-dumped."""
     csv_path = Path(csv_path)
     if not csv_path.exists():
         raise FileNotFoundError(f"CSV source not found: {csv_path}")
     logger.info(f"Parsing CSV: {csv_path.name}")
-    df_preview = pd.read_csv(csv_path)
-    logger.info(f"  → {len(df_preview)} rows × {len(df_preview.columns)} columns")
+    df = pd.read_csv(csv_path)
+    logger.info(f"  → {len(df)} rows × {len(df.columns)} columns")
+    
+    if filter_doc_short:
+        df = df[df["doc_short"] == filter_doc_short]
+        logger.info(f"  → Filtered to doc_short: {filter_doc_short} ({len(df)} rows)")
 
-    text = build_synthetic_document(csv_path)
-    logger.info(f"  → synthetic document: {len(text):,} chars")
+    all_chunks: List[LegalChunk] = []
 
-    chunker = SemanticChunker(
-        source_doc=source_doc,
-        doc_short=doc_short,
-        granularity=granularity,
-        max_chunk_chars=max_chunk_chars,
-        emit_dieu_when_no_khoan=emit_dieu_when_no_khoan,
-        emit_structural_headings=emit_structural_headings,
-    )
-    chunks = chunker.parse(text)
-    logger.info(f"  → {len(chunks)} semantic chunks")
-    return chunks
+    # If the CSV has "doc_short" and "source_doc" columns, we group by them to support multi-document consolidation
+    if "doc_short" in df.columns and "source_doc" in df.columns:
+        logger.info("Detected multi-document CSV format, grouping by (doc_short, source_doc)")
+        groups = df.groupby(["doc_short", "source_doc"], sort=False)
+        for (g_doc_short, g_source_doc), sub_df in groups:
+            logger.info(f"Processing group {g_doc_short} ({len(sub_df)} articles)")
+            text = build_synthetic_document(sub_df)
+            chunker = SemanticChunker(
+                source_doc=g_source_doc,
+                doc_short=g_doc_short,
+                granularity=granularity,
+                max_chunk_chars=max_chunk_chars,
+                emit_dieu_when_no_khoan=emit_dieu_when_no_khoan,
+                emit_structural_headings=emit_structural_headings,
+            )
+            chunks = chunker.parse(text)
+            logger.info(f"  → {len(chunks)} chunks for {g_doc_short}")
+            all_chunks.extend(chunks)
+    else:
+        # Fallback to single document behavior
+        text = build_synthetic_document(df)
+        chunker = SemanticChunker(
+            source_doc=source_doc,
+            doc_short=doc_short,
+            granularity=granularity,
+            max_chunk_chars=max_chunk_chars,
+            emit_dieu_when_no_khoan=emit_dieu_when_no_khoan,
+            emit_structural_headings=emit_structural_headings,
+        )
+        chunks = chunker.parse(text)
+        all_chunks.extend(chunks)
+
+    logger.info(f"  → Total {len(all_chunks)} semantic chunks generated from CSV")
+    return all_chunks

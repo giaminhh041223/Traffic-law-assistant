@@ -2,14 +2,12 @@
 
 This allows chat history to be preserved across Streamlit updates and restarts,
 creating a ChatGPT-like multitasking chat interface.
-Optimized for multi-user web environments to prevent race conditions.
+Optimized for multi-user web environments to prevent session leakage and race conditions.
 """
 from __future__ import annotations
 
 import json
 import uuid
-import sys
-from dataclasses import asdict, is_dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List
@@ -34,13 +32,31 @@ def _get_history_dir() -> Path:
     return HISTORY_DIR
 
 
-def get_session_file_path(session_id: str) -> Path:
-    """Helper to generate a clean, safe path under data/chat_history/session_{session_id}.json."""
-    # Ensure we don't double-prefix
-    clean_id = session_id
-    if clean_id.startswith("session_"):
-        clean_id = clean_id[len("session_"):]
-    return _get_history_dir() / f"session_{clean_id}.json"
+def get_user_id() -> str:
+    """Retrieves or registers a unique browser-level session ID for the user.
+    
+    Guarantees absolute isolation between different concurrent users/tabs.
+    """
+    if st is not None and hasattr(st, "session_state"):
+        if "user_session_id" not in st.session_state:
+            st.session_state.user_session_id = str(uuid.uuid4())
+            logger.info(f"[session_manager] Initialized new isolated user_id: {st.session_state.user_session_id}")
+        return st.session_state.user_session_id
+    return "system_default"
+
+
+def get_or_create_streamlit_session_id() -> str:
+    """Backward-compatible alias of get_user_id() used by other modules (e.g. ai_router)."""
+    return get_user_id()
+
+
+def get_session_file_path(conversation_id: str) -> Path:
+    """Generates an isolated conversation file path prefixed with the unique user_id."""
+    user_id = get_user_id()
+    clean_conv_id = conversation_id
+    if clean_conv_id.startswith("conv_"):
+        clean_conv_id = clean_conv_id[len("conv_"):]
+    return _get_history_dir() / f"user_{user_id}_conv_{clean_conv_id}.json"
 
 
 # ---------------------------------------------------------------------------
@@ -52,7 +68,8 @@ def to_json_serializable(obj: Any) -> Any:
         return [to_json_serializable(x) for x in obj]
     if isinstance(obj, dict):
         return {k: to_json_serializable(v) for k, v in obj.items()}
-    if is_dataclass(obj):
+    if hasattr(obj, "__dataclass_fields__"):
+        from dataclasses import asdict
         return to_json_serializable(asdict(obj))
     if hasattr(obj, "__dict__"):
         return to_json_serializable(obj.__dict__)
@@ -79,7 +96,7 @@ def dict_to_citation(c_d: Dict[str, Any]) -> ExtractedCitation | None:
     )
 
 
-def dict_to_rag_result(d: Dict[str, Any]) -> RAGResult | None:
+def dict_to_rag_result(d: Dict[str, Any]) -> Any | None:
     if not d:
         return None
     from src.phase4_generation.rag_chain import RAGResult
@@ -114,29 +131,13 @@ def dict_to_rag_result(d: Dict[str, Any]) -> RAGResult | None:
 # ---------------------------------------------------------------------------
 # Public Session API
 # ---------------------------------------------------------------------------
-def get_or_create_streamlit_session_id() -> str:
-    """Retrieves the active session ID from st.session_state, or registers a new unique UUID.
-    
-    Guarantees that every user accessing the web application receives an isolated session.
-    """
-    if st is not None and hasattr(st, "session_state"):
-        if "session_id" not in st.session_state:
-            st.session_state.session_id = str(uuid.uuid4())
-            logger.info(f"[session_manager] Initialized new Streamlit Session State ID: {st.session_state.session_id}")
-        return st.session_state.session_id
-    return str(uuid.uuid4())
-
-
 def create_session(first_query: str = "") -> str:
     """Create a new independent conversation session and write it to disk.
 
-    Args:
-        first_query: Optional first user question to generate a clean title.
-
     Returns:
-        The unique string UUID of the session.
+        The unique string UUID of the conversation.
     """
-    session_id = get_or_create_streamlit_session_id()
+    conversation_id = str(uuid.uuid4())
     title = (
         first_query[:35] + "..."
         if len(first_query) > 35
@@ -145,55 +146,38 @@ def create_session(first_query: str = "") -> str:
     title = title.replace("\n", " ").strip()
 
     data = {
-        "conversation_id": session_id,
+        "conversation_id": conversation_id,
         "title": title,
         "timestamp": datetime.now().isoformat(),
         "messages": [],
     }
-    save_session(session_id, data)
-    return session_id
+    save_session(conversation_id, data)
+    return conversation_id
 
 
-def save_session(session_id: str, data: Dict[str, Any]) -> None:
-    """Serialize the conversation session data to a JSON file.
-
-    Args:
-        session_id: UUID of the session.
-        data: The session data dictionary containing 'title', 'timestamp', and 'messages'.
-    """
-    path = get_session_file_path(session_id)
+def save_session(conversation_id: str, data: Dict[str, Any]) -> None:
+    """Serialize the conversation session data to a JSON file."""
+    path = get_session_file_path(conversation_id)
     serializable_data = to_json_serializable(data)
     
-    # Thread-safe write to prevent multi-user race conditions (writing to tmp and renaming)
+    # Thread-safe atomic write to prevent multi-user file conflicts
     temp_path = path.with_suffix(".tmp")
     try:
         with open(temp_path, "w", encoding="utf-8") as f:
             json.dump(serializable_data, f, ensure_ascii=False, indent=2)
         temp_path.replace(path)
     except Exception as e:
-        logger.error(f"[session_manager] Failed thread-safe session save for {session_id}: {e}")
+        logger.error(f"[session_manager] Failed thread-safe session save for conversation {conversation_id}: {e}")
         if temp_path.exists():
             temp_path.unlink()
         raise e
 
 
-def load_session(session_id: str) -> Dict[str, Any]:
-    """Read a conversation session file from disk and reconstruct its dataclasses.
-
-    Args:
-        session_id: UUID of the session.
-
-    Returns:
-        The session data dictionary.
-    """
-    path = get_session_file_path(session_id)
+def load_session(conversation_id: str) -> Dict[str, Any]:
+    """Read a conversation session file from disk and reconstruct its dataclasses."""
+    path = get_session_file_path(conversation_id)
     if not path.exists():
-        # Fallback to legacy path format if present
-        legacy_path = _get_history_dir() / f"{session_id}.json"
-        if legacy_path.exists():
-            path = legacy_path
-        else:
-            raise FileNotFoundError(f"Session {session_id} not found on disk at {path}.")
+        raise FileNotFoundError(f"Conversation {conversation_id} not found on disk at {path}.")
             
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -212,14 +196,12 @@ def load_session(session_id: str) -> Dict[str, Any]:
 
 
 def list_sessions() -> List[Dict[str, Any]]:
-    """List all saved conversation sessions on disk, sorted newest first.
-
-    Returns:
-        A list of dictionaries containing 'conversation_id', 'title', and 'timestamp'.
-    """
+    """List only the conversation sessions belonging to the active user, sorted newest first."""
+    user_id = get_user_id()
     sessions = []
-    # Search for files starting with 'session_' or matching legacy '.json' files
-    for file in _get_history_dir().glob("*.json"):
+    
+    # Filter files strictly belonging to the active user_id
+    for file in _get_history_dir().glob(f"user_{user_id}_conv_*.json"):
         try:
             with open(file, "r", encoding="utf-8") as f:
                 d = json.load(f)
@@ -232,21 +214,14 @@ def list_sessions() -> List[Dict[str, Any]]:
                     })
         except Exception:
             continue
+            
     # Sort sessions by timestamp desc (newest first)
     sessions.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
     return sessions
 
 
-def delete_session(session_id: str) -> None:
-    """Delete a conversation session file from disk.
-
-    Args:
-        session_id: UUID of the session to delete.
-    """
-    path = get_session_file_path(session_id)
+def delete_session(conversation_id: str) -> None:
+    """Delete a conversation session file from disk."""
+    path = get_session_file_path(conversation_id)
     if path.exists():
         path.unlink()
-    # Delete legacy file if it exists
-    legacy_path = _get_history_dir() / f"{session_id}.json"
-    if legacy_path.exists():
-        legacy_path.unlink()

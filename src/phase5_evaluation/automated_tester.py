@@ -123,15 +123,51 @@ class TrafficLawAutomatedTester:
                 
         return covered / len(expected_cits)
 
+    def _normalize_vn_numbers(self, text: str) -> str:
+        """Normalize Vietnamese text-based numbers to full digits.
+        
+        Handles patterns like:
+        - '6 triệu' → '6000000'
+        - '400 nghìn' → '400000'  
+        - '18,5 triệu' → '18500000'
+        - '2.5 triệu' → '2500000'
+        """
+        import re as _re
+        result = text
+        
+        # Pattern: number + triệu (million)
+        result = _re.sub(
+            r'(\d+)[.,](\d+)\s*triệu',
+            lambda m: str(int(m.group(1)) * 1000000 + int(m.group(2)) * (100000 if len(m.group(2)) == 1 else 10000 if len(m.group(2)) == 2 else 1000)),
+            result
+        )
+        result = _re.sub(
+            r'(\d+)\s*triệu',
+            lambda m: str(int(m.group(1)) * 1000000),
+            result
+        )
+        
+        # Pattern: number + nghìn/ngàn (thousand)
+        result = _re.sub(
+            r'(\d+)\s*(?:nghìn|ngàn)',
+            lambda m: str(int(m.group(1)) * 1000),
+            result
+        )
+        
+        return result
+
     def evaluate_calculation_accuracy(self, actual_answer: str, expected_fines: List[str]) -> float:
         """Verify if fine calculations in the answer match the expected values.
         
         Formula: 1.0 if all expected fine figures are successfully stated in the answer as whole numbers, 0.0 otherwise.
+        Now handles Vietnamese text-based numbers (e.g. '6 triệu') via normalization.
         """
         if not expected_fines:
             return 1.0  # No calculations expected
-            
-        actual_clean = actual_answer.replace(".", "").replace(",", "")
+        
+        # First normalize Vietnamese text numbers, then strip dots/commas
+        actual_normalized = self._normalize_vn_numbers(actual_answer)
+        actual_clean = actual_normalized.replace(".", "").replace(",", "")
         
         # Check if all expected numbers appear in actual clean answer as whole numbers
         for expected in expected_fines:

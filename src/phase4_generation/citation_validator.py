@@ -109,6 +109,12 @@ def _parse_fragment(frag: str) -> ExtractedCitation:
     nd_match = _RE_NGHI_DINH.search(frag)
     nghi_dinh = (nd_match.group(1), nd_match.group(2)) if nd_match else None
     qcvn = _first(_RE_QCVN, frag)
+    
+    # A valid legal citation must pinpoint the exact rule (Article/Điều or QCVN).
+    # Just citing "Nghị định 100" without the Article is considered a hallucination loophole.
+    if dieu is None and qcvn is None:
+        return ExtractedCitation() # Return empty citation
+        
     return ExtractedCitation(dieu=dieu, khoan=khoan, diem=diem,
                              nghi_dinh=nghi_dinh, qcvn=qcvn)
 
@@ -126,29 +132,29 @@ def _detect_vehicle_types(text: str) -> Set[str]:
     text_lower = (text or "").lower()
     found = set()
     
-    # Check for "người đi bộ" (pedestrian)
-    if "đi bộ" in text_lower or "người đi bộ" in text_lower:
+    # Check for "người đi bộ" (pedestrian) with word boundaries
+    if re.search(r"\b(?:đi bộ|người đi bộ)\b", text_lower):
         found.add("nguoi_di_bo")
         
-    # Check for "xe đạp" (bicycle) or "xe thô sơ"
-    if "xe đạp" in text_lower or "xe thô sơ" in text_lower or "xe thô-sơ" in text_lower:
+    # Check for "xe đạp" (bicycle) or "xe thô sơ" with word boundaries
+    if re.search(r"\b(?:xe đạp|xe thô sơ|xe thô-sơ)\b", text_lower):
         found.add("xe_dap")
         found.add("xe_tho_so")
         
-    # Check for "xe máy" or "mô tô" or "xe gắn máy" or "mô-tô"
-    if "xe máy" in text_lower or "mô tô" in text_lower or "xe gắn máy" in text_lower or "xe mô tô" in text_lower or "mô-tô" in text_lower:
+    # Check for "xe máy" or "mô tô" or "xe gắn máy" or "mô-tô" with word boundaries
+    if re.search(r"\b(?:xe máy|mô tô|xe gắn máy|xe mô tô|mô-tô)\b", text_lower):
         found.add("xe_may")
         
-    # Check for "ô tô" or "xe hơi" or "xe du lịch" or "xe khách" or "xe tải" or "xe ô-tô"
-    if "ô tô" in text_lower or "xe hơi" in text_lower or "xe du lịch" in text_lower or "xe tải" in text_lower or "xe khách" in text_lower or "xe ô-tô" in text_lower:
+    # Check for "ô tô" or "xe hơi" or "xe du lịch" or "xe khách" or "xe tải" or "xe ô-tô" with word boundaries
+    if re.search(r"\b(?:ô tô|xe hơi|xe du lịch|xe tải|xe khách|xe ô-tô)\b", text_lower):
         found.add("o_to")
         
-    # Check for "máy kéo"
-    if "máy kéo" in text_lower:
+    # Check for "máy kéo" with word boundaries
+    if re.search(r"\b(?:máy kéo)\b", text_lower):
         found.add("may_keo")
         
-    # Check for "xe chuyên dùng" or "xe máy chuyên dùng"
-    if "chuyên dùng" in text_lower:
+    # Check for "xe chuyên dùng" or "xe máy chuyên dùng" with word boundaries
+    if re.search(r"\b(?:chuyên dùng|xe chuyên dùng|xe máy chuyên dùng)\b", text_lower):
         found.add("xe_chuyen_dung")
         
     return found
@@ -238,7 +244,7 @@ class CitationValidator:
             # Tolerant bypass: if the answer asserts that the user is lawful and not penalized,
             # requiring a citation is a logical fallacy. Bypassing require_at_least_one.
             is_lawful_assertion = any(w in lower for w in [
-                "không bị xử phạt", "không bị phạt", "đúng luật", "0 đồng", 
+                "không bị xử phạt", "không bị phạt", "đúng luật", "không bị phạt tiền", 
                 "không phải chịu mức phạt", "không có lỗi", "hoàn toàn đúng luật",
                 "không phải chịu bất kỳ mức phạt"
             ])
@@ -265,8 +271,13 @@ class CitationValidator:
             ("123", "2021"): "ND123",
         }
 
-        # Analyze vehicle types from query
+        # Analyze vehicle types from query. If ambiguous, extract from the answer.
         query_vehicles = _detect_vehicle_types(query) if query else set()
+        ans_vehicles = _detect_vehicle_types(answer) if answer else set()
+        
+        # We enforce vehicle type alignment using the union of query and answer vehicles,
+        # but only if we detected at least one vehicle type in the query OR answer.
+        enforce_vehicles = query_vehicles.union(ans_vehicles)
 
         for cit in report.citations_found:
             doc_short = (
@@ -284,7 +295,7 @@ class CitationValidator:
                 report.supported_citations.append(cit)
                 
                 # Check for vehicle type alignment on supported citations
-                if query_vehicles:
+                if enforce_vehicles:
                     matching_chunks = []
                     for chunk in chunks:
                         c_cit = chunk_citation(chunk)
@@ -323,16 +334,16 @@ class CitationValidator:
                                 
                         # Check overlap (only if chunk has vehicle types specified)
                         if chunk_vehicles:
-                            overlap = query_vehicles.intersection(chunk_vehicles)
+                            overlap = enforce_vehicles.intersection(chunk_vehicles)
                             if not overlap:
                                 report.is_valid = False
                                 report.failures.append(
-                                    f"Subject/Vehicle Type Mismatch: query is about {query_vehicles} "
+                                    f"Subject/Vehicle Type Mismatch: context involves {enforce_vehicles} "
                                     f"but cited chunk applies to {chunk_vehicles}"
                                 )
                                 logger.warning(
                                     f"[citation_validator] Vehicle type mismatch detected! "
-                                    f"Query: {query_vehicles}, Cited chunk: {chunk_vehicles}"
+                                    f"Context: {enforce_vehicles}, Cited chunk: {chunk_vehicles}"
                                 )
             else:
                 report.hallucinated_citations.append(cit)
@@ -365,6 +376,11 @@ def _citation_supported(
     # We tolerate a citation that names ONLY a Nghị định without Điều — it's
     # weak but not a hallucination — provided some chunk is from that doc.
     if cit.dieu is None and cit.khoan is None and cit.diem is None:
+        if cit.qcvn is not None:
+            return any(
+                d is not None and "qcvn" in d.lower()
+                for (d, di, kh, dm) in chunk_triples
+            )
         if expected_doc is None:
             return False
         return any(
@@ -375,12 +391,15 @@ def _citation_supported(
     # Helper: do we allow `None` on the doc side?
     # If the answer doesn't name a Nghị định, the citation may still be valid
     # provided the (dieu, khoan, diem) appears in ANY chunk regardless of doc.
-    doc_match = lambda d: (
-        expected_doc is None
-        or d is None
-        or d == expected_doc
-        or (d == "ND100_123" and expected_doc in ("ND100", "ND123"))
-    )
+    if cit.qcvn is not None:
+        doc_match = lambda d: d is not None and "qcvn" in d.lower()
+    else:
+        doc_match = lambda d: (
+            expected_doc is None
+            or d is None
+            or d == expected_doc
+            or (d == "ND100_123" and expected_doc in ("ND100", "ND123"))
+        )
 
     # Most specific level cited determines the strictest check.
     if cit.diem is not None and cit.khoan is not None and cit.dieu is not None:
@@ -398,7 +417,25 @@ def _citation_supported(
             doc_match(d) and di == cit.dieu
             for (d, di) in chunk_dieus
         )
-    # Khoản / Điểm without Điều are too ambiguous to support; treat as unsupported.
+    
+    # Relaxed validation for small LLMs: Allow Khoản / Điểm without Điều
+    # if it matches any retrieved chunk's Khoản / Điểm.
+    if cit.khoan is not None and cit.diem is not None:
+        return any(
+            doc_match(d) and kh == cit.khoan and (dm == cit.diem or dm is None or dm == "")
+            for (d, di, kh, dm) in chunk_triples
+        )
+    if cit.khoan is not None:
+        return any(
+            doc_match(d) and kh == cit.khoan
+            for (d, di, kh) in chunk_di_khoan
+        )
+    if cit.diem is not None:
+        return any(
+            doc_match(d) and (dm == cit.diem or dm is None or dm == "")
+            for (d, di, kh, dm) in chunk_triples
+        )
+
     return False
 
 

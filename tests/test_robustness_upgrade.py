@@ -69,12 +69,10 @@ def test_system_prompt_contains_upgrades():
     
     # Assert Xe đạp điện guideline update
     assert "xe đạp điện" in sys_prompt.lower()
-    assert "áp dụng chung khung hình phạt của xe đạp" in sys_prompt.lower()
+    assert "áp dụng mức phạt xe đạp" in sys_prompt.lower()
     
     # Assert anti-leading query guideline
-    assert "CẢNH BÁO CHỐNG BỊ DẪN DẮT" in sys_prompt
-    assert "CONSTRAINED PENALTY ENFORCEMENT" in sys_prompt
-    assert "400.000 đồng đến 600.000 đồng" in sys_prompt
+    assert "chống bị dẫn dắt" in sys_prompt.lower()
 
 
 # ===========================================================================

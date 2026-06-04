@@ -27,7 +27,7 @@ dense:
   # NOTE: vietnamese-sbert is PhoBERT-based and expects WORD-SEGMENTED input
   # (multi-syllable words joined by '_'). We apply pyvi.ViTokenizer before encoding.
   segment_input: true
-  device: "auto"                      # auto | cpu | cuda
+  device: "cpu"                      # auto | cpu | cuda
   batch_size: 32
   normalize_embeddings: true          # required when using cosine distance below
   max_seq_length: 256

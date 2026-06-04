@@ -147,3 +147,21 @@ data/processed/*.db
 logs/
 scratch/
 .system_generated/
+
+# User chat histories & local evaluation reports
+data/chat_history/
+tests/eval_report.json
+tests/*_test_matrix.json
+data/evaluation/eval_results_fast.json
+data/evaluation/fast_test_matrix.json
+
+# Large raw data files (>5MB) & local reports
+data/raw/faq_luat_giao_thong_20000_super_extreme_metadata2_no_url.csv
+data/raw/Quy chuan.doc
+data/raw/Bo-600-Cau-Hoi-Dung-Cho-Sat-Hach-Lai-Xe-Co-Gioi-Duong-Bo-4.pdf
+Bao_cao_Thong_so_RAG.*
+Bao_cao_nghien_cuu_RAG.*
+project_mentoring.*
+Screenshots/
+archive_root/
+.streamlit/

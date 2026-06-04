@@ -11,43 +11,16 @@ paths:
   bm25_index: "vector_store/bm25_index.pkl"
   log_dir: "logs"
 
-# Document registry — PDF sources.
-# The key MUST match the filename (without .pdf) in data/raw/.
-# Note: Luật 36/2024/QH15 (Luật TTATGT) is ingested from the structured CSV
-# (see `csv_sources` below) — the PDF version is a duplicate of that data.
-documents:
-  Nghidinh_100_123_hopnhat_03:
-    title: "Văn bản hợp nhất 03/VBHN-BGTVT (NĐ 100/2019 + NĐ 123/2021)"
-    short: "ND100_123"
-    year: 2022
-    issued_by: "Bộ Giao thông vận tải"
-    description: "Quy định xử phạt vi phạm hành chính trong lĩnh vực giao thông đường bộ và đường sắt (Nghị định 100/2019/NĐ-CP hợp nhất với Nghị định 123/2021/NĐ-CP)"
-  QCVN_41_2024:
-    title: "Thông tư 51/2024/TT-BGTVT ban hành QCVN 41:2024/BGTVT"
-    short: "QCVN41_TT"
-    year: 2024
-    issued_by: "Bộ Giao thông vận tải"
-    description: "Văn bản Thông tư ban hành QCVN 41:2024 (1 trang)"
-  QCVN_41_2024_attachment:
-    title: "QCVN 41:2024/BGTVT — Quy chuẩn kỹ thuật quốc gia về báo hiệu đường bộ"
-    short: "QCVN41_2024"
-    year: 2024
-    issued_by: "Bộ Giao thông vận tải"
-    description: "Toàn văn QCVN 41:2024 — báo hiệu đường bộ, biển báo, vạch kẻ đường, tín hiệu đèn (Phần 1–3, 16 Chương). Chuyển đổi từ tệp đính kèm Quy chuan.doc."
+documents: {}
 
-# Structured CSV sources — each row of the CSV is treated as one Điều
-# (article) and chunked at Khoản level by the same SemanticChunker that
-# processes the PDFs. The CSV columns chapter_number / chapter_title /
-# article_number / article_title / content are injected into the chunk
-# metadata via a synthetic-text reconstruction step.
 csv_sources:
-  metadata_luat:
-    file: "metadata_luat.csv"
-    title: "Luật Trật tự, An toàn Giao thông Đường bộ (Luật 36/2024/QH15)"
-    short: "LUAT_TTATGT_2024"
-    year: 2024
-    issued_by: "Quốc hội"
-    description: "Luật Trật tự, an toàn giao thông đường bộ — số 36/2024/QH15"
+  metadata:
+    file: "metadata.csv"
+    title: "Consolidated Vietnamese Traffic Law Dataset"
+    short: "CONSOLIDATED"
+    year: 2026
+    issued_by: "Mixed"
+    description: "Consolidated dataset of all traffic laws, decrees, circulars and standards."
 
 # Chunking strategy
 chunking:

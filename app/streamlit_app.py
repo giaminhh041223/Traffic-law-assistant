@@ -21,6 +21,22 @@ from __future__ import annotations
 import os
 import sys
 import time
+import threading
+
+# Import sentence_transformers at the very top level of Streamlit entrypoint
+# to prevent "RuntimeError: can't register atexit after shutdown" in worker threads
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, message=".*torch.classes.*")
+try:
+    import torch
+    try:
+        torch.classes.__path__ = []
+    except Exception:
+        pass
+    from sentence_transformers import SentenceTransformer, CrossEncoder
+except ImportError:
+    pass
+
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -32,6 +48,14 @@ if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
 import streamlit as st
+
+# MUST be the absolute first Streamlit command in the script
+st.set_page_config(
+    page_title="Trợ lý Pháp luật Giao thông Việt Nam",
+    page_icon="🚦",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
 from src.phase2_hybrid_search.hybrid_search import HybridSearcher
 from src.phase3_reranking.cross_encoder_reranker import CrossEncoderReranker
@@ -59,15 +83,13 @@ options = ["hf", "ollama", "openai"]
 default_backend_index = options.index(default_backend) if default_backend in options else 0
 
 
-# ===========================================================================
-# Page setup
-# ===========================================================================
-st.set_page_config(
-    page_title="Trợ lý Pháp luật Giao thông Việt Nam",
-    page_icon="🚦",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
+@st.cache_resource
+def _get_global_lock() -> threading.Lock:
+    """Create a global thread lock shared across all concurrent browser sessions."""
+    return threading.Lock()
+
+global_lock = _get_global_lock()
+
 
 # ===========================================================================
 # Chat state (Multi-Session Persistence)
@@ -377,39 +399,40 @@ if user_input:
     with st.chat_message("user"):
         st.markdown(user_input)
 
-    _apply_sidebar_overrides()
+    with global_lock:
+        _apply_sidebar_overrides()
 
-    filters: Optional[Dict[str, Any]] = None
-    if filter_vehicle != "(tất cả)":
-        filters = {"vehicle_type": filter_vehicle}
+        filters: Optional[Dict[str, Any]] = None
+        if filter_vehicle != "(tất cả)":
+            filters = {"vehicle_type": filter_vehicle}
 
-    # Extract historical turns (excluding the user query that was just appended)
-    past_history = st.session_state.messages[:-1]
+        # Extract historical turns (excluding the user query that was just appended)
+        past_history = st.session_state.messages[:-1]
 
-    with st.chat_message("assistant"):
-        with st.spinner("Đang tra cứu và tổng hợp …"):
-            t0 = time.perf_counter()
-            try:
-                result = rag.run(user_input, chat_history=past_history, filters=filters)
-            except Exception as e:
-                st.error(f"Lỗi: {e}")
-                st.stop()
-            elapsed = time.perf_counter() - t0
+        with st.chat_message("assistant"):
+            with st.spinner("Đang tra cứu và tổng hợp …"):
+                t0 = time.perf_counter()
+                try:
+                    result = rag.run(user_input, chat_history=past_history, filters=filters)
+                except Exception as e:
+                    st.error(f"Lỗi: {e}")
+                    st.stop()
+                elapsed = time.perf_counter() - t0
 
-        st.markdown(result.answer or "_(không có câu trả lời)_")
-        st.markdown(_validation_badge(result), unsafe_allow_html=True)
+            st.markdown(result.answer or "_(không có câu trả lời)_")
+            st.markdown(_validation_badge(result), unsafe_allow_html=True)
 
-        with st.expander("📑 Nguồn trích dẫn / Căn cứ pháp lý (Top-K chunks)", expanded=True):
-            _render_sources(result)
-            st.markdown("---")
-            _render_timings(result)
-            st.caption(f"Tổng thời gian: {elapsed*1000:.0f} ms")
+            with st.expander("📑 Nguồn trích dẫn / Căn cứ pháp lý (Top-K chunks)", expanded=True):
+                _render_sources(result)
+                st.markdown("---")
+                _render_timings(result)
+                st.caption(f"Tổng thời gian: {elapsed*1000:.0f} ms")
 
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": result.answer,
-        "result": result,
-    })
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": result.answer,
+            "result": result,
+        })
 
     # ---- Persist the updated conversation to disk ----
     _current_sess = session_manager.load_session(st.session_state.active_session_id)

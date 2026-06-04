@@ -54,7 +54,7 @@ QUY TRÌNH PHẢN HỒI (BẮT BUỘC):
 HƯỚNG DẪN QUAN TRỌNG:
 1. Bạn CẦN liên kết tiêu đề Điều với nội dung bên dưới để trả lời đúng đối tượng phương tiện:
    - Xe mô tô, xe gắn máy, xe máy điện tương đương xe máy (Điều 6).
-   - Xe đạp máy, xe đạp điện áp dụng chung khung hình phạt của xe đạp (Điều 8, vì tiêu đề ghi rõ 'kể cả xe đạp điện'). Do đó, các lỗi phạt nồng độ cồn của xe đạp trong Điều 8 hoàn toàn áp dụng cho xe đạp điện!
+   - Xe đạp máy, xe đạp điện áp dụng chung khung hình phạt của xe đạp (áp dụng mức phạt xe đạp cho xe đạp điện) (Điều 8, vì tiêu đề ghi rõ 'kể cả xe đạp điện'). Do đó, các lỗi phạt nồng độ cồn của xe đạp trong Điều 8 hoàn toàn áp dụng cho xe đạp điện!
 2. Thuật ngữ đồng nghĩa: "xe mô tô" / "xe gắn máy" tương đương "xe máy"; "không chấp hành hiệu lệnh của đèn tín hiệu" tương đương "vượt đèn đỏ".
 3. Trích dẫn nguồn ngay sau câu trả lời dưới dạng: "(Điểm <chữ>, Khoản <số>, Điều <số> Nghị định 100/2019/NĐ-CP)" hoặc "(Điểm <chữ>, Khoản <số>, Điều <số> Nghị định 123/2021/NĐ-CP)". Nếu nguồn là "Văn bản hợp nhất 03", hãy đổi thành "Nghị định 100/2019/NĐ-CP".
 4. Nếu KHÔNG tìm thấy thông tin phù hợp trong <context> để trả lời câu hỏi (ngoại trừ trường hợp đi đúng luật / không vi phạm được mô tả tại Hướng dẫn số 6), bạn PHẢI trả lời chính xác câu sau:
@@ -67,6 +67,8 @@ HƯỚNG DẪN QUAN TRỌNG:
    - Lưu ý quan trọng: Văn bản luật trong <context> chỉ quy định xử phạt đối với hành vi *vi phạm* (ví dụ: quy định phạt lỗi "đi không đúng làn đường"). Bạn cần tự động suy luận logic từ quy định cấm đối lập này (ví dụ: nếu đi không đúng làn đường bị phạt thì hành vi "đi đúng làn đường" là hoàn toàn đúng luật và không bị phạt), và **KHÔNG ĐƯỢC từ chối trả lời** bằng câu "Tôi không tìm thấy quy định phù hợp". Khen ngợi tinh thần tự giác chấp hành pháp luật của họ.
 7. CẢNH BÁO CHỐNG BỊ DẪN DẮT (CONSTRAINED PENALTY ENFORCEMENT): Nếu câu hỏi của người dùng đưa ra một con số mức phạt sai lệch (ví dụ: 'không đội mũ bảo hiểm bị phạt 5 triệu đúng không?'), bạn TUYỆT ĐỐI KHÔNG ĐƯỢC đồng tình hay lặp lại con số sai đó. Bạn phải đối chiếu chính xác với mức phạt thực tế được ghi trong <context> (ở đây là phạt tiền từ 400.000 đồng đến 600.000 đồng theo Nghị định 100/123) để phủ nhận mức phạt sai của người dùng và khẳng định rõ mức phạt đúng theo quy định!
 8. RÀO CẢN MIỄN XỬ PHẠT KHI XUẤT TRÌNH GIẤY TỜ (DOCUMENT PRESENTATION EXCLUSION CLAUSE): Khi áp dụng quy định xuất trình giấy tờ bổ sung dưới Điều 82 Nghị định 100/2019/NĐ-CP, việc xuất trình giấy tờ hợp lệ sau thời điểm vi phạm CHỈ giúp chuyển lỗi liên quan đến giấy tờ (từ lỗi "không có" sang lỗi "không mang theo" giấy tờ để nộp mức phạt thấp hơn) và không xử phạt chủ phương tiện. Việc này TUYỆT ĐỐI không có tác dụng miễn trừ, giảm nhẹ hay xóa bỏ các lỗi hành vi vi phạm nghiêm trọng độc lập khác (như lỗi nồng độ cồn, lỗi đi ngược chiều trên cao tốc, v.v.). Người vi phạm vẫn phải bị xử phạt đầy đủ đối với các hành vi vi phạm độc lập đó theo đúng khung quy định!
+9. ĐỊNH DẠNG SỐ TIỀN (STRICT NUMBER FORMATTING): Tất cả số tiền phạt PHẢI được viết dưới dạng số đầy đủ với dấu chấm ngăn cách hàng nghìn, ví dụ: "6.000.000 đồng", "400.000 đồng", "18.000.000 đồng". TUYỆT ĐỐI KHÔNG ĐƯỢC viết dạng chữ như "6 triệu", "400 nghìn", "18 triệu". Luôn ghi cả mức phạt tối thiểu và tối đa theo dạng "từ X đồng đến Y đồng".
+10. TUYỆT ĐỐI KHÔNG ĐƯỢC TỰ BỊA ĐẶT TRÍCH DẪN (NO CITATION HALLUCINATION): Bạn chỉ được phép trích dẫn các Điều, Khoản, Điểm thực sự xuất hiện trong phần <context> được cung cấp. Tuyệt đối không được tự ý chế tạo ra hoặc đoán mò bất kỳ Điều, Khoản hoặc Điểm nào không xuất hiện trong ngữ cảnh, ngay cả khi bạn nghĩ rằng điều khoản đó là chính xác ngoài đời thực. Mọi trích dẫn trong câu trả lời phải khớp chính xác với thông tin có trong <context>.
 
 DƯỚI ĐÂY LÀ VÍ DỤ MẪU ĐỂ BẠN LÀM THEO:
 
@@ -124,8 +126,10 @@ USER_PROMPT_TEMPLATE_VI = """\
 </context>
 
 Câu hỏi: {question}
+{intents_hint}
 
-Hãy trả lời câu hỏi trên CHỈ dựa trên <context>, kèm trích dẫn theo đúng định dạng quy định."""
+Hãy trả lời câu hỏi trên CHỈ dựa trên <context>, kèm trích dẫn theo đúng định dạng quy định.
+BẮT BUỘC: Bạn phải sao chép chính xác nguồn trích dẫn nằm trong dấu ngoặc vuông [] ở đầu mỗi đoạn ngữ cảnh và đặt trong dấu ngoặc đơn () ở cuối câu trả lời của bạn. Không được tự ý thay đổi số hay bịa đặt điều khoản."""
 
 
 # ---------------------------------------------------------------------------
@@ -250,10 +254,18 @@ def build_system_prompt() -> str:
     return SYSTEM_PROMPT_VI
 
 
-def build_user_prompt(question: str, chunks: List[Dict[str, Any]]) -> str:
+def build_user_prompt(question: str, chunks: List[Dict[str, Any]], intents: Optional[List[str]] = None) -> str:
+    intents_hint = ""
+    if intents:
+        # Clean intents (remove semicolons, trim)
+        clean_intents = [i.replace(";", "").strip() for i in intents if i.strip()]
+        if clean_intents:
+            intents_hint = f"(Từ khóa pháp lý liên quan: {', '.join(clean_intents)})"
+
     return USER_PROMPT_TEMPLATE_VI.format(
         context_block=format_chunks_for_prompt(chunks),
         question=question.strip(),
+        intents_hint=intents_hint,
     )
 
 
@@ -261,6 +273,7 @@ def build_messages(
     question: str,
     chunks: List[Dict[str, Any]],
     chat_history: Optional[List[Dict[str, str]]] = None,
+    intents: Optional[List[str]] = None,
 ) -> List[Dict[str, str]]:
     """Chat-API shaped messages list. The format every modern LLM client accepts."""
     messages = [{"role": "system", "content": build_system_prompt()}]
@@ -268,7 +281,7 @@ def build_messages(
         # Inject the last 4 messages (2 turns) of history to keep context tiny and CPU fast
         for msg in chat_history[-4:]:
             messages.append({"role": msg["role"], "content": msg["content"]})
-    messages.append({"role": "user", "content": build_user_prompt(question, chunks)})
+    messages.append({"role": "user", "content": build_user_prompt(question, chunks, intents)})
     return messages
 
 

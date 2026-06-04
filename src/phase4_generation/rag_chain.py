@@ -199,14 +199,18 @@ class TrafficLawRAG:
         # NOTE: currently always uses local LLM; cloud routing will be
         # enabled once OPENAI_API_KEY support is configured.
 
-        # ---- Stage 1: query rewriting (slang → formal) ----
+        # ---- Stage 1 & 2: Rewriting (slang → formal) THEN Deconstruction ----
+        # CRITICAL: Rewriter runs FIRST on the full query so that slang terms
+        # (xe cọp, thông chốt, nẹt pô) are resolved to formal legal terms
+        # BEFORE the Deconstructor makes vehicle-type branching decisions.
         t_rw = time.perf_counter()
-        rewritten_query = self.rewriter.rewrite(reformulated_query)
+        pre_rewritten = self.rewriter.rewrite(reformulated_query)
+        sub_queries = self.deconstructor.deconstruct(pre_rewritten)
+        rewritten_query = " và ".join(sub_queries) if len(sub_queries) > 1 else sub_queries[0]
         result.timings["rewrite"] = time.perf_counter() - t_rw
 
-        # ---- Stage 2 & 3: Localized Reranking & Retrieval ----
+        # ---- Stage 3: Localized Reranking & Retrieval ----
         t0 = time.perf_counter()
-        sub_queries = self.deconstructor.deconstruct(rewritten_query)
 
         if len(sub_queries) > 1:
             # SOTA Parallel localized retrieval & reranking for compound queries
@@ -214,43 +218,77 @@ class TrafficLawRAG:
                 f"[rag] compound query detected with {len(sub_queries)} intents. "
                 f"Running localized atomic retrievals and cross-encoder rerankings..."
             )
-            merged_top_chunks = []
-            seen_ids = set()
-            
-            # Retrieve and rerank locally for each atomic intent to prevent cross-encoder dilution
+            intent_tops = []
             for sq in sub_queries:
                 try:
                     sq_candidates = self.retriever.search(sq, top_k=self.hybrid_top_k, filters=filters)
                     if sq_candidates:
-                        # Rerank against the atomic sub-query 'sq' instead of the full compound query
                         sq_top = self.reranker.rerank(sq, sq_candidates, top_k=2)
-                        for c in sq_top:
-                            cid = c.get("chunk_id")
-                            if cid not in seen_ids:
-                                seen_ids.add(cid)
-                                merged_top_chunks.append(c)
+                        # Fall back to RRF order if CE confidence is extremely low (max score < 0.1)
+                        # This prevents the Cross-Encoder from introducing noise when it fails to match colloquial terms
+                        if sq_top and sq_top[0].get("cross_encoder_score", -1e9) < 0.1:
+                            logger.info(
+                                f"[rag] CE score too low ({sq_top[0].get('cross_encoder_score'):.4f} < 0.1) for '{sq}'. "
+                                f"Falling back to RRF ordering."
+                            )
+                            fallback_top = []
+                            for c in sq_candidates[:2]:
+                                new_c = dict(c)
+                                new_c["cross_encoder_score"] = float(new_c.get("rrf_score", 1.0))
+                                fallback_top.append(new_c)
+                            sq_top = fallback_top
+                        intent_tops.append(sq_top)
+                    else:
+                        intent_tops.append([])
                 except Exception as exc:
                     logger.error(f"[rag] atomic query '{sq}' retrieval/rerank failed: {exc}")
+                    intent_tops.append([])
             
             t_elapsed = time.perf_counter() - t0
             result.timings["retrieve"] = t_elapsed * 0.2
             result.timings["rerank"] = t_elapsed * 0.8
 
             # Context-budget cap: small LLMs (1.5B–7B) degrade with too many
-            # context chunks.  We keep at most final_top_k + 2 chunks but
+            # context chunks. We keep at most final_top_k + 2 chunks but
             # guarantee every sub-intent has at least its top-1 representative.
+            merged_top_chunks = []
+            seen_ids = set()
+            
+            # Phase 1: Enforce the guarantee - add all top-1 representatives first
+            for tops in intent_tops:
+                if len(tops) > 0:
+                    c = tops[0]
+                    # Keep the top representative of each intent to guarantee complete coverage
+                    if c.get("cross_encoder_score", -1e9) > -999.0:
+                        cid = c.get("chunk_id")
+                        if cid not in seen_ids:
+                            seen_ids.add(cid)
+                            merged_top_chunks.append(c)
+                        
+            # Phase 2: Collect other candidates (including tops[0] if it was skipped) and sort them by CE score desc
+            others = []
+            for tops in intent_tops:
+                for c in tops:
+                    cid = c.get("chunk_id")
+                    if cid not in seen_ids:
+                        others.append(c)
+            
+            others.sort(key=lambda c: c.get("cross_encoder_score", -1e9), reverse=True)
+            
+            # Fill remaining capacity up to max_chunks (5)
             max_chunks = self.final_top_k + 2          # default: 5
-            if len(merged_top_chunks) > max_chunks:
-                merged_top_chunks.sort(
-                    key=lambda c: c.get("cross_encoder_score", -1e9),
-                    reverse=True,
-                )
-                merged_top_chunks = merged_top_chunks[:max_chunks]
-                logger.info(
-                    f"[rag] trimmed merged chunks from "
-                    f"{len(seen_ids)} → {len(merged_top_chunks)} "
-                    f"(context-budget cap = {max_chunks})"
-                )
+            for c in others:
+                if len(merged_top_chunks) >= max_chunks:
+                    break
+                cid = c.get("chunk_id")
+                if cid not in seen_ids:
+                    seen_ids.add(cid)
+                    merged_top_chunks.append(c)
+                    
+            logger.info(
+                f"[rag] merged parallel retrieval results. "
+                f"Total unique chunks: {len(merged_top_chunks)} (guaranteed top-1s: {len([t for t in intent_tops if t])})"
+            )
             top_chunks = merged_top_chunks
         else:
             # Simple single-intent query → standard retrieval and rerank.
@@ -262,7 +300,7 @@ class TrafficLawRAG:
             if not candidates:
                 result.answer = self.refusal_phrase
                 result.refused_due_to_low_confidence = True
-                result.validation = self.validator.validate(result.answer, [], query=rewritten_query)
+                result.validation = self.validator.validate(result.answer, [], query=reformulated_query)
                 return result
                 
             t1 = time.perf_counter()
@@ -285,14 +323,27 @@ class TrafficLawRAG:
             )
             result.answer = self.refusal_phrase
             result.refused_due_to_low_confidence = True
-            result.validation = self.validator.validate(result.answer, top_chunks, query=rewritten_query)
+            result.validation = self.validator.validate(result.answer, top_chunks, query=reformulated_query)
             return result
 
         # ---- Stage 4: prompt → LLM ----
-        messages = build_messages(rewritten_query, top_chunks, chat_history=chat_history)
+        # Use the fully rewritten query (standardized terms like 'xe máy' -> 'xe mô tô')
+        # so the 1.5B model doesn't fail at basic lexical matching against the context.
+        messages = build_messages(rewritten_query, top_chunks, chat_history=chat_history, intents=sub_queries)
         result.messages = messages
         t2 = time.perf_counter()
-        llm_resp: LLMResponse = self.llm.generate(messages)
+        
+        # Build context string for the router
+        context_str = "\n".join([f"[{i+1}]. {chunk['text']}" for i, chunk in enumerate(top_chunks)])
+        
+        llm_resp: LLMResponse = self.router.route_generation(
+            query=reformulated_query,
+            context=context_str,
+            route_status=route_target,
+            local_generator_fn=self.llm.generate,
+            messages=messages
+        )
+        
         result.timings["generate"] = time.perf_counter() - t2
 
         # Parse XML thought tags if present
@@ -316,7 +367,7 @@ class TrafficLawRAG:
 
         # ---- Stage 5: citation validation ----
         t3 = time.perf_counter()
-        result.validation = self.validator.validate(result.answer, top_chunks, query=rewritten_query)
+        result.validation = self.validator.validate(result.answer, top_chunks, query=reformulated_query)
         result.timings["validate"] = time.perf_counter() - t3
 
         if not result.validation.is_valid:
@@ -326,6 +377,7 @@ class TrafficLawRAG:
             )
             result.answer = self.refusal_phrase
             result.refused_due_to_low_confidence = True
+            result.validation = self.validator.validate(result.answer, top_chunks, query=reformulated_query)
 
         return result
 

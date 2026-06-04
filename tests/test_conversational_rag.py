@@ -95,10 +95,10 @@ def test_session_manager_serialization_lifecycle(tmp_path, monkeypatch):
 def test_query_reformulator_resolves_pronouns():
     def fake_predictor(messages):
         # Assert formatting of history in the prompt
-        prompt = messages[1]["content"]
-        assert "Người dùng: Tôi đi xe máy đúng làn đường" in prompt
-        assert "Trợ lý: Bạn không bị phạt" in prompt
-        assert "Câu hỏi tiếp theo của người dùng: Thế còn ô tô?" in prompt
+        prompt = messages[-1]["content"]
+        assert "- Người dùng: Tôi đi xe máy đúng làn đường" in prompt
+        assert "- Trợ lý: Bạn không bị phạt" in prompt
+        assert "Câu hỏi mới của người dùng: Thế còn ô tô?" in prompt
         return "Lái xe ô tô đi đúng làn đường thì có bị phạt không?"
 
     llm = LLMClient(backend="stub", config={}, predictor=fake_predictor)
@@ -111,6 +111,7 @@ def test_query_reformulator_resolves_pronouns():
     
     rewritten = reformulator.reformulate("Thế còn ô tô?", chat_history)
     assert rewritten == "Lái xe ô tô đi đúng làn đường thì có bị phạt không?"
+
 
 
 def test_query_reformulator_skips_empty_history():

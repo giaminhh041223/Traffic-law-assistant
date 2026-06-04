@@ -51,21 +51,21 @@ _MUC_RE = re.compile(
 # Điều 5, Điều 5., Điều 5: <title>
 # Captures (1) the number, (2) the (possibly empty) inline title.
 _DIEU_RE = re.compile(
-    r"^\s*Điều\s+(\d+)\s*[\.\-:]?\s*(.*)$",
+    r"^\s*Điều\s+(\d+)\s*[\.\-:]?(?:\[\d+\])?\s*(.*)$",
     re.IGNORECASE | re.UNICODE,
 )
 
 # Khoản marker at line start: "1. ", "2) ", "10. "
 # Note the REQUIRED trailing space — protects against decimals like "1.5".
 _KHOAN_RE = re.compile(
-    r"^\s*(\d{1,3})\s*[\.\)]\s+(.+)$",
+    r"^\s*(\d{1,3})\s*[\.\)](?:\[\d+\])?\s+(.+)$",
     re.UNICODE,
 )
 
 # Điểm marker at line start: "a) ", "b) ", "đ) "
 # Vietnamese point alphabet does NOT contain f / j / w / z.
 _DIEM_RE = re.compile(
-    r"^\s*([a-zđ])\s*\)\s+(.+)$",
+    r"^\s*([a-zđ])\s*\)(?:\[\d+\])?\s+(.+)$",
     re.IGNORECASE | re.UNICODE,
 )
 

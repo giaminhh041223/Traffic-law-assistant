@@ -2,7 +2,7 @@
 
 Chào mừng bạn đến với **Trợ lý Pháp luật Giao thông Việt Nam** — hệ thống RAG (Retrieval-Augmented Generation) tiên tiến chuyên sâu về Luật Giao thông Đường bộ Việt Nam, được thiết kế để hoạt động ổn định, bảo mật và hiệu năng cao trên môi trường Production (như Streamlit Cloud).
 
-Hệ thống tích hợp bộ dữ liệu pháp luật đã được cập nhật mới nhất (không chứa các luật cũ đã hết hiệu lực) và hỗ trợ hệ thống chuẩn bị dữ liệu huấn luyện đa nhiệm (**Multi-Task Fine-Tuning**) từ **20.000 câu FAQ** để tối ưu hóa mô hình LLM trên các đám mây GPU (như RTX 5090).
+Hệ thống tích hợp bộ dữ liệu pháp luật đã được cập nhật mới nhất (không chứa các luật cũ đã hết hiệu lực) và hỗ trợ hệ thống chuẩn bị dữ liệu huấn luyện đa nhiệm (**Multi-Task Fine-Tuning**) từ **20.000 câu FAQ** để tối ưu hóa mô hình LLM.
 
 ---
 
